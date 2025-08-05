@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>FlashLearn - Học từ vựng chuyên ngành</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+
+      /* Phần mã đã được sửa để hiển thị ảnh nền */
+      background-image: url('background.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    header {
+      /* Thêm một lớp nền mờ để chữ dễ đọc hơn */
+      background-color: rgba(0, 85, 128, 0.9);
+      padding: 15px;
+      color: white;
+      text-align: center;
+    }
+
+    nav {
+      /* Thêm một lớp nền mờ */
+      background-color: rgba(0, 61, 92, 0.9);
+      overflow: hidden;
+    }
+
+    nav a {
+      float: left;
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 20px;
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      background-color: #0077a6;
+    }
+
+    section {
+      padding: 40px;
+      max-width: 900px;
+      margin: 20px auto; /* Giảm margin top để cân đối hơn */
+      background-color: rgba(255, 255, 255, 0.95); /* Nền trắng hơi mờ để nổi bật trên ảnh nền */
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2); /* Tăng shadow cho nổi bật */
+    }
+
+    h2 {
+      color: #005580;
+    }
+
+    form {
+      margin-top: 20px;
+    }
+
+    input[type="text"], input[type="password"], input[type="email"] {
+      padding: 10px;
+      width: 100%;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box; /* Thêm để padding không làm vỡ layout */
+    }
+
+    input[type="submit"] {
+      padding: 10px 20px;
+      background-color: #005580;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #0077a6;
+    }
+
+    .start-button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 24px;
+      background-color: #0077a6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>FlashLearn - Flashcard Từ Vựng Chuyên Ngành</h1>
+  </header>
+
+  <nav>
+    <a href="#home">Trang chủ</a>
+    <a href="#auth">Đăng nhập / Đăng ký</a>
+    <a href="#about">Giới thiệu</a>
+    <a href="#why">Tại sao chọn chúng tôi?</a>
+    <a href="#learn">Bài học</a>
+  </nav>
+
+  <section id="home">
+    <h2>Chào mừng đến với FlashLearn</h2>
+    <p>Giúp bạn ghi nhớ từ vựng hiệu quả qua hệ thống flashcard tương tác và thông minh.</p>
+    <a href="#learn" class="start-button">🚀 Bắt đầu bài học</a>
+  </section>
+
+  <section id="auth">
+    <h2>Đăng nhập / Đăng ký</h2>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button onclick="showForm('login')" style="padding: 10px 20px; margin-right: 10px;">Đăng nhập</button>
+      <button onclick="showForm('register')" style="padding: 10px 20px;">Đăng ký</button>
+    </div>
+
+    <div id="login-form" style="display:none;">
+      <form>
+        <input type="text" placeholder="Tên người dùng hoặc Email" required><br>
+        <input type="password" placeholder="Mật khẩu" required><br>
+        <input type="submit" value="Đăng nhập">
+      </form>
+    </div>
+
+    <div id="register-form" style="display:none;">
+      <form>
+        <input type="text" placeholder="Tên người dùng" required><br>
+        <input type="email" placeholder="Email" required><br>
+        <input type="password" placeholder="Mật khẩu" required><br>
+        <input type="submit" value="Đăng ký">
+      </form>
+
+      <p style="margin: 15px 0;">Hoặc đăng ký nhanh bằng:</p>
+      <button style="background-color: #db4437; color: white; padding: 10px 15px; border: none; border-radius: 5px; margin-right: 10px;">
+        Đăng ký bằng Gmail
+      </button>
+      <button style="background-color: #4267B2; color: white; padding: 10px 15px; border: none; border-radius: 5px;">
+        Đăng ký bằng Facebook
+      </button>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>Giới thiệu</h2>
+    <p>
+      Trang web của chúng tôi được thiết kế dành riêng cho người học từ vựng chuyên ngành: công nghệ, y tế, tài chính, và nhiều lĩnh vực khác.
+      Bạn sẽ học từ thông qua hệ thống flashcard hiện đại kết hợp với lặp lại ngắt quãng (Spaced Repetition) để tăng hiệu quả ghi nhớ lâu dài.
+    </p>
+  </section>
+
+  <section id="why">
+    <h2>Tại sao nên sử dụng FlashLearn?</h2>
+    <ul>
+      <li>🔁 Ôn tập thông minh theo mức độ ghi nhớ</li>
+      <li>📚 Dữ liệu từ vựng chuyên ngành đa dạng và cập nhật</li>
+      <li>🧠 Hỗ trợ cải thiện trí nhớ dài hạn với phương pháp SRS</li>
+      <li>📱 Giao diện dễ dùng, thân thiện trên cả điện thoại và máy tính</li>
+      <li>💡 Tùy chỉnh lộ trình học theo nhu cầu cá nhân</li>
+    </ul>
+  </section>
+
+  <section id="learn">
+    <h2>Bài học đầu tiên: Flashcard từ vựng</h2>
+    <p>Hệ thống sẽ hiển thị từng từ một và bạn đánh giá mức độ ghi nhớ.</p>
+    <p>(Phần này sẽ được phát triển thành giao diện flashcard sau)</p>
+  </section>
+
+  <script>
+    function showForm(formType) {
+      document.getElementById("login-form").style.display = (formType === "login") ? "block" : "none";
+      document.getElementById("register-form").style.display = (formType === "register") ? "block" : "none";
+    }
+  </script>
+
+</body>
+</html>
