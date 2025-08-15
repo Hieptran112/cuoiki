@@ -13,6 +13,9 @@ switch ($action) {
     case 'search':
         searchWord();
         break;
+    case 'suggestions':
+        getSearchSuggestions();
+        break;
     case 'add_word':
         addWord();
         break;
@@ -45,6 +48,15 @@ switch ($action) {
         break;
     case 'get_recent_learned':
         getRecentLearned();
+        break;
+    case 'get_user_stats':
+        getUserStats();
+        break;
+    case 'update_trigger':
+        updateLearningStatsTrigger();
+        break;
+    case 'submit_test_answer':
+        submitTestAnswer();
         break;
     default:
         echo json_encode(["success" => false, "message" => "Action không hợp lệ"]);
@@ -586,4 +598,245 @@ function bulkImport() {
     }
     echo json_encode(["success"=>true, "message"=>"Imported $inserted, skipped $skipped", "inserted"=>$inserted, "skipped"=>$skipped]);
 }
-?> 
+
+function getSearchSuggestions() {
+    global $conn;
+
+    $data = json_decode(file_get_contents("php://input"), true);
+    $query = trim($data['query'] ?? '');
+
+    if (empty($query)) {
+        echo json_encode(["success" => true, "data" => []]);
+        return;
+    }
+
+    try {
+        // Tìm kiếm các từ bắt đầu bằng ký tự nhập vào (ưu tiên cao nhất)
+        $stmt = $conn->prepare("SELECT word, vietnamese FROM dictionary WHERE word LIKE ? ORDER BY word ASC LIMIT 10");
+        $searchTerm = $query . "%";
+        $stmt->bind_param("s", $searchTerm);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $suggestions = [];
+        while ($row = $result->fetch_assoc()) {
+            $suggestions[] = [
+                'word' => $row['word'],
+                'vietnamese' => $row['vietnamese']
+            ];
+        }
+
+        // Nếu chưa đủ 10 kết quả, tìm thêm các từ chứa ký tự đó
+        if (count($suggestions) < 10) {
+            $stmt2 = $conn->prepare("SELECT word, vietnamese FROM dictionary WHERE word LIKE ? AND word NOT LIKE ? ORDER BY word ASC LIMIT ?");
+            $containsTerm = "%" . $query . "%";
+            $startsTerm = $query . "%";
+            $limit = 10 - count($suggestions);
+            $stmt2->bind_param("ssi", $containsTerm, $startsTerm, $limit);
+            $stmt2->execute();
+            $result2 = $stmt2->get_result();
+
+            while ($row = $result2->fetch_assoc()) {
+                $suggestions[] = [
+                    'word' => $row['word'],
+                    'vietnamese' => $row['vietnamese']
+                ];
+            }
+            $stmt2->close();
+        }
+
+        $stmt->close();
+        echo json_encode(["success" => true, "data" => $suggestions]);
+
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi tìm kiếm gợi ý: " . $e->getMessage()]);
+    }
+}
+
+function getUserStats() {
+    global $conn;
+
+    if (!isset($_SESSION['user_id'])) {
+        // Trả về thống kê mặc định cho user chưa đăng nhập
+        echo json_encode([
+            "success" => true,
+            "data" => [
+                "totalWords" => 0,
+                "correctAnswers" => 0,
+                "totalAnswers" => 0,
+                "streakDays" => 0,
+                "accuracy" => 0,
+                "todayCorrect" => 0,
+                "todayTotal" => 0,
+                "weeklyCorrect" => 0,
+                "weeklyTotal" => 0,
+                "monthlyCorrect" => 0,
+                "monthlyTotal" => 0
+            ]
+        ]);
+        return;
+    }
+
+    try {
+        $userId = $_SESSION['user_id'];
+        $stats = [];
+
+        // Lấy thống kê tổng từ bảng learning_stats
+        $stmt = $conn->prepare("SELECT words_learned, correct_answers, total_answers, streak_days FROM learning_stats WHERE user_id = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $stats['totalWords'] = (int)$row['words_learned'];
+            $stats['correctAnswers'] = (int)$row['correct_answers'];
+            $stats['totalAnswers'] = (int)$row['total_answers'];
+            $stats['streakDays'] = (int)$row['streak_days'];
+            $stats['accuracy'] = $row['total_answers'] > 0 ? round(($row['correct_answers'] / $row['total_answers']) * 100) : 0;
+        } else {
+            // Nếu chưa có record trong learning_stats, tạo mới
+            $stmt2 = $conn->prepare("INSERT INTO learning_stats (user_id, words_learned, correct_answers, total_answers, streak_days, last_study_date) VALUES (?, 0, 0, 0, 0, CURDATE())");
+            $stmt2->bind_param("i", $userId);
+            $stmt2->execute();
+            $stmt2->close();
+
+            $stats['totalWords'] = 0;
+            $stats['correctAnswers'] = 0;
+            $stats['totalAnswers'] = 0;
+            $stats['streakDays'] = 0;
+            $stats['accuracy'] = 0;
+        }
+        $stmt->close();
+
+        // Thống kê hôm nay
+        $today = date('Y-m-d');
+        $stmt = $conn->prepare("SELECT COUNT(*) as total, SUM(is_correct) as correct FROM exercise_results WHERE user_id = ? AND DATE(submitted_at) = ?");
+        $stmt->bind_param("is", $userId, $today);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $todayStats = $result->fetch_assoc();
+        $stats['todayCorrect'] = (int)$todayStats['correct'];
+        $stats['todayTotal'] = (int)$todayStats['total'];
+        $stmt->close();
+
+        // Thống kê tuần này
+        $weekStart = date('Y-m-d', strtotime('monday this week'));
+        $stmt = $conn->prepare("SELECT COUNT(*) as total, SUM(is_correct) as correct FROM exercise_results WHERE user_id = ? AND DATE(submitted_at) >= ?");
+        $stmt->bind_param("is", $userId, $weekStart);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $weekStats = $result->fetch_assoc();
+        $stats['weeklyCorrect'] = (int)$weekStats['correct'];
+        $stats['weeklyTotal'] = (int)$weekStats['total'];
+        $stmt->close();
+
+        // Thống kê tháng này
+        $monthStart = date('Y-m-01');
+        $stmt = $conn->prepare("SELECT COUNT(*) as total, SUM(is_correct) as correct FROM exercise_results WHERE user_id = ? AND DATE(submitted_at) >= ?");
+        $stmt->bind_param("is", $userId, $monthStart);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $monthStats = $result->fetch_assoc();
+        $stats['monthlyCorrect'] = (int)$monthStats['correct'];
+        $stats['monthlyTotal'] = (int)$monthStats['total'];
+        $stmt->close();
+
+        echo json_encode(["success" => true, "data" => $stats]);
+
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi lấy thống kê: " . $e->getMessage()]);
+    }
+}
+
+function updateLearningStatsTrigger() {
+    global $conn;
+
+    try {
+        // Drop existing trigger
+        $conn->query("DROP TRIGGER IF EXISTS update_learning_stats");
+
+        // Create improved trigger
+        $triggerSQL = "
+        CREATE TRIGGER update_learning_stats
+        AFTER INSERT ON exercise_results
+        FOR EACH ROW
+        BEGIN
+            DECLARE user_exists INT DEFAULT 0;
+            DECLARE unique_words_today INT DEFAULT 0;
+
+            -- Kiểm tra xem user đã có trong bảng stats chưa
+            SELECT COUNT(*) INTO user_exists FROM learning_stats WHERE user_id = NEW.user_id;
+
+            IF user_exists = 0 THEN
+                -- Tạo record mới cho user
+                INSERT INTO learning_stats (user_id, words_learned, correct_answers, total_answers, streak_days, last_study_date)
+                VALUES (NEW.user_id, 0, 0, 0, 0, CURDATE());
+            END IF;
+
+            -- Đếm số từ unique mà user đã trả lời đúng hôm nay
+            SELECT COUNT(DISTINCT er.exercise_id) INTO unique_words_today
+            FROM exercise_results er
+            WHERE er.user_id = NEW.user_id
+            AND er.is_correct = 1
+            AND DATE(er.submitted_at) = CURDATE();
+
+            -- Cập nhật thống kê
+            UPDATE learning_stats
+            SET
+                total_answers = total_answers + 1,
+                correct_answers = correct_answers + IF(NEW.is_correct = 1, 1, 0),
+                words_learned = unique_words_today,
+                last_study_date = CURDATE(),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = NEW.user_id;
+
+            -- Cập nhật streak days
+            UPDATE learning_stats
+            SET streak_days = CASE
+                WHEN DATEDIFF(CURDATE(), last_study_date) = 1 THEN streak_days + 1
+                WHEN DATEDIFF(CURDATE(), last_study_date) = 0 THEN streak_days
+                ELSE 1
+            END
+            WHERE user_id = NEW.user_id;
+        END";
+
+        $conn->query($triggerSQL);
+
+        echo json_encode(["success" => true, "message" => "Trigger đã được cập nhật thành công"]);
+
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi cập nhật trigger: " . $e->getMessage()]);
+    }
+}
+
+function submitTestAnswer() {
+    global $conn;
+
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(["success" => false, "message" => "Vui lòng đăng nhập"]);
+        return;
+    }
+
+    $data = json_decode(file_get_contents("php://input"), true);
+    $userId = $_SESSION['user_id'];
+    $exerciseId = $data['exercise_id'] ?? 1;
+    $selectedAnswer = $data['selected_answer'] ?? 0;
+    $correctAnswer = $data['correct_answer'] ?? 1;
+    $isCorrect = $data['is_correct'] ?? false;
+
+    try {
+        $stmt = $conn->prepare("INSERT INTO exercise_results (user_id, exercise_id, selected_answer, correct_answer, is_correct) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iiiii", $userId, $exerciseId, $selectedAnswer, $correctAnswer, $isCorrect ? 1 : 0);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Đã ghi nhận kết quả"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Lỗi ghi nhận kết quả"]);
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
+    }
+}
+?>

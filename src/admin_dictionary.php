@@ -426,6 +426,11 @@ $username = $isLoggedIn ? $_SESSION['username'] : null;
                         <div class="stat-label">Từ nâng cao</div>
                     </div>
                 </div>
+                <div style="margin-top: 1rem; text-align: center;">
+                    <button onclick="updateTrigger()" class="btn btn-warning">
+                        <i class="fas fa-sync-alt"></i> Cập nhật Trigger Thống kê
+                    </button>
+                </div>
             </section>
 
             <!-- Add Word Section -->
@@ -736,6 +741,28 @@ $username = $isLoggedIn ? $_SESSION['username'] : null;
             try { data = JSON.parse(raw); } catch(e) { alert('JSON không hợp lệ'); return; }
             fetch('controllers/dictionary.php?action=bulk_import', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) })
                 .then(r=>r.json()).then(d=>{ alert(d.message||'Xong'); if(d.success){ loadStats(); loadWords(); } });
+        }
+
+        function updateTrigger() {
+            if (!confirm('Bạn có chắc muốn cập nhật trigger thống kê? Điều này sẽ cải thiện cách tính toán thống kê.')) {
+                return;
+            }
+
+            fetch('controllers/dictionary.php?action=update_trigger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    loadStats();
+                }
+            })
+            .catch(err => {
+                console.error('Error updating trigger:', err);
+                alert('Có lỗi xảy ra khi cập nhật trigger');
+            });
         }
 
         // Initialize page

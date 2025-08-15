@@ -150,13 +150,65 @@
             margin-bottom: 2rem;
         }
 
-        .search-input {
+        .search-input-wrapper {
             flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
             padding: 1rem 1.5rem;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
             font-size: 1rem;
             transition: border-color 0.3s ease;
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-suggestions.show {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background-color: #f8f9fa;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-word {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .suggestion-meaning {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
         }
 
         .search-input:focus {
@@ -447,6 +499,10 @@
                 flex-direction: column;
             }
 
+            .search-suggestions {
+                max-height: 200px;
+            }
+
             .stats-section {
                 grid-template-columns: 1fr;
             }
@@ -509,7 +565,7 @@
                         <li><a href="#exercises">Bài tập</a></li>
                         <li><a href="#import-text">Nhập văn bản</a></li>
                         <li><a href="#flashcards">Flashcards</a></li>
-                        <li><a href="#stats">Thống kê</a></li>
+                        <li><a href="stats.php">Thống kê</a></li>
                     </ul>
                 </nav>
                 <div class="user-info">
@@ -540,7 +596,10 @@
                     Tra cứu từ điển
                 </h2>
                 <div class="search-container">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Nhập từ cần tra cứu..." autocomplete="off">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Nhập từ cần tra cứu..." autocomplete="off">
+                        <div id="searchSuggestions" class="search-suggestions"></div>
+                    </div>
                     <button onclick="searchWord()" class="search-btn">
                         <i class="fas fa-search"></i> Tìm kiếm
                     </button>
@@ -676,32 +735,8 @@
                 <?php endif; ?>
             </section>
 
-            <!-- Stats Section -->
-            <section id="stats" class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalWords">0</div>
-                    <div class="stat-label">Từ đã học</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="correctAnswers">0</div>
-                    <div class="stat-label">Câu trả lời đúng</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="streakDays">0</div>
-                    <div class="stat-label">Ngày liên tiếp</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="accuracy">0%</div>
-                    <div class="stat-label">Độ chính xác</div>
-                </div>
-            </section>
-            <section class="exercises-section" style="margin-top: -1rem;">
-                <h2 class="section-title">
-                    <i class="fas fa-clock"></i>
-                    Từ đã học 2 ngày gần nhất
-                </h2>
-                <div id="recent-learned"></div>
-            </section>
+
+
         </div>
     </main>
 
@@ -891,6 +926,146 @@
             }
         }
 
+        // Autocomplete functionality
+        let searchTimeout;
+        let currentSuggestionIndex = -1;
+        let suggestions = [];
+
+        function setupAutocomplete() {
+            const searchInput = document.getElementById('searchInput');
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                clearTimeout(searchTimeout);
+
+                if (query.length === 0) {
+                    hideSuggestions();
+                    return;
+                }
+
+                // Debounce search requests
+                searchTimeout = setTimeout(() => {
+                    fetchSuggestions(query);
+                }, 300);
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    navigateSuggestions(1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    navigateSuggestions(-1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (currentSuggestionIndex >= 0 && suggestions[currentSuggestionIndex]) {
+                        selectSuggestion(suggestions[currentSuggestionIndex]);
+                    } else {
+                        searchWord();
+                    }
+                } else if (e.key === 'Escape') {
+                    hideSuggestions();
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    hideSuggestions();
+                }
+            });
+        }
+
+        function fetchSuggestions(query) {
+            fetch('controllers/dictionary.php?action=suggestions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    suggestions = data.data;
+                    displaySuggestions(suggestions);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching suggestions:', err);
+            });
+        }
+
+        function displaySuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+
+            if (suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+
+            let html = '';
+            suggestions.forEach((suggestion, index) => {
+                html += `
+                    <div class="suggestion-item" data-index="${index}" onclick="selectSuggestionByIndex(${index})">
+                        <div class="suggestion-word">${suggestion.word}</div>
+                        <div class="suggestion-meaning">${suggestion.vietnamese}</div>
+                    </div>
+                `;
+            });
+
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.classList.add('show');
+            currentSuggestionIndex = -1;
+        }
+
+        function navigateSuggestions(direction) {
+            const suggestionItems = document.querySelectorAll('.suggestion-item');
+
+            if (suggestionItems.length === 0) return;
+
+            // Remove active class from current item
+            if (currentSuggestionIndex >= 0) {
+                suggestionItems[currentSuggestionIndex].classList.remove('active');
+            }
+
+            // Update index
+            currentSuggestionIndex += direction;
+
+            if (currentSuggestionIndex < 0) {
+                currentSuggestionIndex = suggestionItems.length - 1;
+            } else if (currentSuggestionIndex >= suggestionItems.length) {
+                currentSuggestionIndex = 0;
+            }
+
+            // Add active class to new item
+            suggestionItems[currentSuggestionIndex].classList.add('active');
+
+            // Scroll into view if needed
+            suggestionItems[currentSuggestionIndex].scrollIntoView({
+                block: 'nearest'
+            });
+        }
+
+        function selectSuggestion(suggestion) {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = suggestion.word;
+            hideSuggestions();
+            searchWord();
+        }
+
+        function selectSuggestionByIndex(index) {
+            if (suggestions[index]) {
+                selectSuggestion(suggestions[index]);
+            }
+        }
+
+        function hideSuggestions() {
+            const suggestionsDiv = document.getElementById('searchSuggestions');
+            suggestionsDiv.classList.remove('show');
+            currentSuggestionIndex = -1;
+        }
+
         // Load daily exercises
         function loadDailyExercises() {
             const container = document.getElementById('exerciseContainer');
@@ -1069,17 +1244,11 @@
                 fetch('controllers/dictionary.php?action=submit_daily_answer', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
                     body: JSON.stringify({ dictionary_id: dictionaryId, selected_vi: selectedText, correct_vi: correctText })
-                }).then(r=>r.json()).then(()=>{ loadAnswerBreakdown(); loadRecentLearned(); }).catch(()=>{});
+                }).then(r=>r.json()).then(()=>{ loadAnswerBreakdown(); }).catch(()=>{});
             }
         }
 
-        function updateStats() {
-            // Mock stats update
-            document.getElementById('totalWords').textContent = Math.floor(Math.random() * 100) + 50;
-            document.getElementById('correctAnswers').textContent = Math.floor(Math.random() * 20) + 10;
-            document.getElementById('streakDays').textContent = Math.floor(Math.random() * 10) + 1;
-            document.getElementById('accuracy').textContent = Math.floor(Math.random() * 30) + 70 + '%';
-        }
+
 
         function toggleBreakdown(type) {
             const el = document.getElementById('breakdown-'+type);
@@ -1100,16 +1269,7 @@
                 }).catch(()=>{});
         }
 
-        function loadRecentLearned() {
-            fetch('controllers/dictionary.php?action=get_recent_learned', { credentials: 'same-origin' })
-                .then(r=>r.json()).then(d=>{
-                    if(!d.success){ return; }
-                    const rows = d.data || [];
-                    const wrap = document.getElementById('recent-learned');
-                    if(!rows.length){ wrap.innerHTML = 'Chưa có dữ liệu.'; return; }
-                    wrap.innerHTML = rows.map(r=>`<div>- <b>${r.word}</b> (${r.vietnamese}) <span style="color:#666">[${r.day}]</span></div>`).join('');
-                }).catch(()=>{});
-        }
+
 
         // Authentication functions
         function handleLogin(event) {
@@ -1447,8 +1607,8 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            setupAutocomplete();
             loadDailyExercises();
-            updateStats();
             <?php if ($isLoggedIn): ?>
             loadDecks();
             <?php endif; ?>
