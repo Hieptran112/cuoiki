@@ -277,9 +277,9 @@ function getMixedExercises() {
 
         $exercises = [];
 
-        // 1) Multiple choice (from first 4)
+        // 1) Multiple choice (from first 6 words, increased from 4)
         $poolVn = array_column($rows, 'vietnamese');
-        for ($i = 0; $i < min(4, count($rows)); $i++) {
+        for ($i = 0; $i < min(6, count($rows)); $i++) {
             $q = $rows[$i];
             $options = [ $q['vietnamese'] ];
             // pick 3 wrong answers
@@ -298,37 +298,9 @@ function getMixedExercises() {
             ];
         }
 
-        // 2) Cloze (fill-in) from english definition or example (next 2)
-        for ($i = 4; $i < min(6, count($rows)); $i++) {
-            $q = $rows[$i];
-            $base = $q['example'] ?: $q['english_definition'];
-            if (!$base) { $base = "Điền từ còn thiếu: ____"; }
-            $sentence = $base;
-            // Replace word occurrences in example/definition with blank
-            $pattern = '/\b' . preg_quote($q['word'], '/') . '\b/i';
-            $sentence = preg_replace($pattern, '_____', $sentence);
-            $exercises[] = [
-                'type' => 'cloze',
-                'prompt' => $sentence,
-                'answer' => $q['word']
-            ];
-        }
+        // Removed matching exercises
 
-        // 3) Matching (last up to 5 pairs)
-        $matchSet = array_slice($rows, 0, min(5, count($rows)));
-        $left = array_map(function($r){ return $r['word']; }, $matchSet);
-        $right = array_map(function($r){ return $r['vietnamese']; }, $matchSet);
-        $pairs = [];
-        for ($i=0; $i<count($left); $i++) { $pairs[] = [ 'word' => $left[$i], 'meaning' => $right[$i] ]; }
-        $shuffledRight = $right;
-        shuffle($shuffledRight);
-        $exercises[] = [
-            'type' => 'matching',
-            'pairs' => $pairs,
-            'right_shuffled' => $shuffledRight
-        ];
-
-        // 4) Listening (use TTS on client) for 2 words
+        // 2) Listening (use TTS on client) for 2 words
         for ($i = 0; $i < min(2, count($rows)); $i++) {
             $q = $rows[$i];
             $exercises[] = [

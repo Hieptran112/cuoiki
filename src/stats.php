@@ -252,10 +252,29 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             <div class="stats-header">
                 <h1><i class="fas fa-chart-line"></i> Thống kê học tập</h1>
                 <p>Theo dõi tiến độ học tập và thành tích của bạn</p>
+                <?php if ($isLoggedIn): ?>
                 <button onclick="refreshStats()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; border-radius: 50px; margin-top: 1rem; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px);">
                     <i class="fas fa-sync-alt"></i> Cập nhật thống kê
                 </button>
+                <?php endif; ?>
             </div>
+
+            <?php if (!$isLoggedIn): ?>
+            <!-- Login Required -->
+            <div class="chart-section">
+                <h3 class="chart-title">
+                    <i class="fas fa-lock"></i> Yêu cầu đăng nhập
+                </h3>
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="font-size: 1.1rem; color: #666; margin-bottom: 2rem;">
+                        Bạn cần đăng nhập để xem thống kê học tập của mình.
+                    </p>
+                    <a href="index.php" style="background: #667eea; color: white; padding: 0.75rem 2rem; border-radius: 12px; text-decoration: none; font-weight: 500; transition: all 0.3s ease; display: inline-block;">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập ngay
+                    </a>
+                </div>
+            </div>
+            <?php else: ?>
 
             <!-- Main Stats Grid -->
             <div class="stats-grid">
@@ -385,6 +404,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     <!-- Recent activity will be loaded here -->
                 </div>
             </div>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
@@ -590,6 +610,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         }
         <?php endif; ?>
 
+        <?php if ($isLoggedIn): ?>
         function refreshStats() {
             // Add loading effect
             const button = event.target;
@@ -606,10 +627,13 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 button.disabled = false;
             }, 1000);
         }
+        <?php endif; ?>
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($isLoggedIn): ?>
             loadAllStats();
+            <?php endif; ?>
         });
     </script>
 </body>
