@@ -32,31 +32,72 @@ if ($username === '' || $email === '' || $password_raw === '') {
 $password = password_hash($password_raw, PASSWORD_DEFAULT);
 
 try {
-    // Kiểm tra email/username tồn tại
-    $check = $conn->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
+    // Kiểm tra email tồn tại
+    $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
     if (!$check) throw new Exception("Prepare statement failed: " . $conn->error);
 
-    $check->bind_param("ss", $email, $username);
+    $check->bind_param("s", $email);
     $check->execute();
     $check->store_result();
 
     if ($check->num_rows > 0) {
-        echo json_encode(["success" => false, "message" => "Email hoặc tên đăng nhập đã tồn tại"]);
+        echo json_encode(["success" => false, "message" => "Email đã tồn tại"]);
         $check->close();
         exit;
     }
     $check->close();
 
-    // Thêm user mới
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, full_name, major) VALUES (?, ?, ?, ?, ?)");
+    // Thêm user mới - sử dụng cấu trúc cơ bản nhất
+    $stmt = $conn->prepare("INSERT INTO users (email, password) VALUES (?, ?)");
     if (!$stmt) throw new Exception("Prepare statement failed: " . $conn->error);
 
-    $stmt->bind_param("sssss", $username, $email, $password, $full_name, $major);
-
+    $stmt->bind_param("ss", $email, $password);
     $stmt->execute();
 
-    // Auto-login after successful registration
+    // Cập nhật thêm thông tin khác nếu có cột
     $newUserId = $conn->insert_id;
+
+    // Thử cập nhật username nếu có cột
+    try {
+        $updateStmt = $conn->prepare("UPDATE users SET username = ? WHERE id = ?");
+        if ($updateStmt) {
+            $updateStmt->bind_param("si", $username, $newUserId);
+            $updateStmt->execute();
+            $updateStmt->close();
+        }
+    } catch (Exception $e) {
+        // Bỏ qua lỗi username
+    }
+
+    // Thử cập nhật full_name nếu có cột và có dữ liệu
+    if ($full_name) {
+        try {
+            $updateStmt = $conn->prepare("UPDATE users SET full_name = ? WHERE id = ?");
+            if ($updateStmt) {
+                $updateStmt->bind_param("si", $full_name, $newUserId);
+                $updateStmt->execute();
+                $updateStmt->close();
+            }
+        } catch (Exception $e) {
+            // Bỏ qua lỗi full_name
+        }
+    }
+
+    // Thử cập nhật major nếu có cột và có dữ liệu
+    if ($major) {
+        try {
+            $updateStmt = $conn->prepare("UPDATE users SET major = ? WHERE id = ?");
+            if ($updateStmt) {
+                $updateStmt->bind_param("si", $major, $newUserId);
+                $updateStmt->execute();
+                $updateStmt->close();
+            }
+        } catch (Exception $e) {
+            // Bỏ qua lỗi major
+        }
+    }
+
+    // Auto-login after successful registration
     $_SESSION['user_id'] = (int)$newUserId;
     $_SESSION['username'] = $username;
     $_SESSION['email'] = $email;

@@ -553,6 +553,12 @@
     </style>
 </head>
 <body>
+    <!-- Include Auth Modal System -->
+    <script src="js/auth-modal.js"></script>
+    <script>
+        // Set login status for JavaScript
+        const isUserLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+    </script>
     <header>
         <div class="container">
             <div class="header-content">
@@ -563,6 +569,7 @@
                     <ul class="nav-menu">
                         <li><a href="#dictionary">Từ điển</a></li>
                         <li><a href="#exercises">Bài tập</a></li>
+                        <li><a href="topics.php">Chủ đề</a></li>
                         <li><a href="flashcards.php">Flashcards</a></li>
                         <li><a href="stats.php">Thống kê</a></li>
                     </ul>
@@ -624,18 +631,10 @@
                     <!-- Exercises will be loaded here -->
                 </div>
                 <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-                    <button class="btn btn-primary" onclick="loadDailyExercises()">Tải trắc nghiệm</button>
-                    <button class="btn" style="background:#17a2b8;color:#fff;" onclick="loadMixedExercises()">Tải bài tập tổng hợp</button>
+                    <button class="btn btn-primary" onclick="requireLogin(loadDailyExercises, 'Bạn cần đăng nhập để làm bài tập hằng ngày.')">Tải trắc nghiệm</button>
+                    <button class="btn" style="background:#17a2b8;color:#fff;" onclick="requireLogin(loadMixedExercises, 'Bạn cần đăng nhập để làm bài tập tổng hợp.')">Tải bài tập tổng hợp</button>
                 </div>
-                <div class="exercise-card" style="margin-top:1rem;">
-                    <div class="exercise-question" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-                        <span>Thống kê câu trả lời hôm nay</span>
-                        <button class="btn btn-secondary" onclick="toggleBreakdown('correct')">Câu trả lời đúng</button>
-                        <button class="btn" style="background:#dc3545;color:#fff;" onclick="toggleBreakdown('wrong')">Câu trả lời sai</button>
-                    </div>
-                    <div id="breakdown-correct" style="display:none; margin-top:0.5rem;"></div>
-                    <div id="breakdown-wrong" style="display:none; margin-top:0.5rem;"></div>
-                </div>
+
             </section>
 
 
@@ -1134,30 +1133,13 @@
                 fetch('controllers/dictionary.php?action=submit_daily_answer', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
                     body: JSON.stringify({ dictionary_id: dictionaryId, selected_vi: selectedText, correct_vi: correctText })
-                }).then(r=>r.json()).then(()=>{ loadAnswerBreakdown(); }).catch(()=>{});
+                }).then(r=>r.json()).then(()=>{}).catch(()=>{});
             }
         }
 
 
 
-        function toggleBreakdown(type) {
-            const el = document.getElementById('breakdown-'+type);
-            const other = document.getElementById('breakdown-'+(type==='correct'?'wrong':'correct'));
-            if (other) other.style.display = 'none';
-            el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
-            if (el.style.display === 'block') { loadAnswerBreakdown(); }
-        }
 
-        function loadAnswerBreakdown() {
-            fetch('controllers/dictionary.php?action=get_answer_breakdown', { credentials: 'same-origin' })
-                .then(r=>r.json()).then(d=>{
-                    if(!d.success){ return; }
-                    const c = d.data.correct || [];
-                    const w = d.data.wrong || [];
-                    document.getElementById('breakdown-correct').innerHTML = c.length ? c.map(x=>`<div>- <b>${x.word}</b> (${x.vietnamese})</div>`).join('') : 'Chưa có câu trả lời đúng.';
-                    document.getElementById('breakdown-wrong').innerHTML = w.length ? w.map(x=>`<div>- <b>${x.word}</b> (${x.vietnamese}) — sai ${x.wrong_count} lần, độ khó: ${x.difficulty.replace('_',' ')}</div>`).join('') : 'Không có mục cần ôn.';
-                }).catch(()=>{});
-        }
 
 
 
@@ -1225,7 +1207,10 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             setupAutocomplete();
-            loadDailyExercises();
+            // Chỉ load bài tập nếu đã đăng nhập
+            if (isUserLoggedIn) {
+                loadDailyExercises();
+            }
         });
     </script>
 </body>

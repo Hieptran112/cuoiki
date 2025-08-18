@@ -344,6 +344,12 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
     </style>
 </head>
 <body>
+    <!-- Include Auth Modal System -->
+    <script src="js/auth-modal.js"></script>
+    <script>
+        // Set login status for JavaScript
+        const isUserLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+    </script>
     <!-- Header -->
     <header class="header">
         <div class="container">
@@ -450,7 +456,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                             <option value="private">Riêng tư</option>
                             <option value="public">Công khai</option>
                         </select>
-                        <button class="import-btn" onclick="createDeck()">
+                        <button class="import-btn" onclick="requireLogin(createDeck, 'Bạn cần đăng nhập để tạo bộ thẻ.')">
                             <i class="fas fa-plus"></i> Tạo bộ thẻ
                         </button>
                     </div>
@@ -471,7 +477,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <input id="card-word" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Từ vựng" />
                         <input id="card-definition" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Định nghĩa" />
                         <input id="card-example" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Ví dụ (tuỳ chọn)" />
-                        <button class="import-btn" onclick="createFlashcard()">
+                        <button class="import-btn" onclick="requireLogin(createFlashcard, 'Bạn cần đăng nhập để thêm thẻ.')">
                             <i class="fas fa-plus"></i> Thêm thẻ
                         </button>
                     </div>
@@ -487,10 +493,10 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         Nhấn để lật thẻ
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
-                        <button class="btn btn-secondary" onclick="rateCard('again')">Lại</button>
-                        <button class="btn" style="background: #ffc107; color: white;" onclick="rateCard('hard')">Khó nhớ</button>
-                        <button class="btn btn-primary" onclick="rateCard('good')">Nhớ tốt</button>
-                        <button class="btn" style="background: #28a745; color: white;" onclick="rateCard('easy')">Rất dễ</button>
+                        <button class="btn btn-secondary" onclick="requireLogin(() => rateCard('again'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Lại</button>
+                        <button class="btn" style="background: #ffc107; color: white;" onclick="requireLogin(() => rateCard('hard'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Khó nhớ</button>
+                        <button class="btn btn-primary" onclick="requireLogin(() => rateCard('good'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Nhớ tốt</button>
+                        <button class="btn" style="background: #28a745; color: white;" onclick="requireLogin(() => rateCard('easy'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Rất dễ</button>
                     </div>
                 </div>
 

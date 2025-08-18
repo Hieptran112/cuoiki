@@ -170,67 +170,18 @@ function addWord() {
 
 function getDailyExercises() {
     global $conn;
-    
+
     try {
-        $limit = 8;
-        $userId = $_SESSION['user_id'] ?? null;
-        $exercises = [];
-        $wordIds = [];
+        // Thay đổi: 10 câu hỏi hoàn toàn ngẫu nhiên
+        $limit = 10;
 
-        // Prioritize scheduled wrong answers for today
-        if ($userId) {
-            $today = (new DateTime('today'))->format('Y-m-d');
-            $w = $conn->prepare("SELECT dictionary_id FROM user_word_review WHERE user_id = ? AND (next_review_date = ? OR last_wrong_date = ?)");
-            $w->bind_param("iss", $userId, $today, $today);
-            $w->execute();
-            $wrongIds = array_map(function($r){ return (int)$r['dictionary_id']; }, $w->get_result()->fetch_all(MYSQLI_ASSOC));
-            $w->close();
+        // Lấy 10 từ ngẫu nhiên từ database
+        $sql = "SELECT id, word, vietnamese, english_definition, part_of_speech FROM dictionary ORDER BY RAND() LIMIT $limit";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        $exercises = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
 
-            if (!empty($wrongIds)) {
-                $in = implode(',', array_fill(0, count($wrongIds), '?'));
-                $types = str_repeat('i', count($wrongIds));
-                $sqlWrong = "SELECT id, word, vietnamese, english_definition, part_of_speech FROM dictionary WHERE id IN ($in) LIMIT $limit";
-                $stmtW = $conn->prepare($sqlWrong);
-                $stmtW->bind_param($types, ...$wrongIds);
-                $stmtW->execute();
-                $resW = $stmtW->get_result();
-                while ($row = $resW->fetch_assoc()) {
-                    $wordIds[] = (int)$row['id'];
-                    $exercises[] = $row;
-                }
-                $stmtW->close();
-            }
-        }
-
-        $remaining = max(0, $limit - count($exercises));
-        if ($remaining > 0) {
-            // Exclude all words that user answered wrong before (any time) to prefer unseen/new ones
-            $excludeIds = $wordIds;
-            if ($userId) {
-                $q = $conn->prepare("SELECT dictionary_id FROM user_word_review WHERE user_id = ?");
-                $q->bind_param("i", $userId);
-                $q->execute();
-                $allWrong = array_map(function($r){ return (int)$r['dictionary_id']; }, $q->get_result()->fetch_all(MYSQLI_ASSOC));
-                $q->close();
-                $excludeIds = array_values(array_unique(array_merge($excludeIds, $allWrong)));
-            }
-
-            if (!empty($excludeIds)) {
-                $notIn = implode(',', array_fill(0, count($excludeIds), '?'));
-                $types = str_repeat('i', count($excludeIds));
-                $sql = "SELECT id, word, vietnamese, english_definition, part_of_speech FROM dictionary WHERE id NOT IN ($notIn) ORDER BY RAND() LIMIT $remaining";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param($types, ...$excludeIds);
-            } else {
-                $sql = "SELECT id, word, vietnamese, english_definition, part_of_speech FROM dictionary ORDER BY RAND() LIMIT $remaining";
-                $stmt = $conn->prepare($sql);
-            }
-            $stmt->execute();
-            $res = $stmt->get_result();
-            while ($row = $res->fetch_assoc()) { $exercises[] = $row; $wordIds[] = (int)$row['id']; }
-            $stmt->close();
-        }
-        
         // Tạo bài tập trắc nghiệm
         $quizExercises = [];
         foreach ($exercises as $exercise) {
@@ -239,16 +190,17 @@ function getDailyExercises() {
             $stmt->bind_param("i", $exercise['id']);
             $stmt->execute();
             $wrongAnswers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-            
+            $stmt->close();
+
             $options = [$exercise['vietnamese']];
             foreach ($wrongAnswers as $wrong) {
                 $options[] = $wrong['vietnamese'];
             }
-            
+
             // Xáo trộn thứ tự đáp án
             shuffle($options);
             $correctIndex = array_search($exercise['vietnamese'], $options);
-            
+
             $quizExercises[] = [
                 'question' => "Từ tiếng Anh '{$exercise['word']}' có nghĩa là gì?",
                 'options' => $options,
@@ -258,9 +210,9 @@ function getDailyExercises() {
                 'part_of_speech' => $exercise['part_of_speech']
             ];
         }
-        
+
         echo json_encode(["success" => true, "data" => $quizExercises]);
-        
+
     } catch (Exception $e) {
         echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
     }
