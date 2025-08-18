@@ -372,9 +372,51 @@ $username = $isLoggedIn ? $_SESSION['username'] : null;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        /* Back Button Styling */
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-btn i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .back-btn {
+                position: static;
+                margin-bottom: 2rem;
+                display: inline-block;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Back to Home Button -->
+    <a href="index.php" class="back-btn">
+        <i class="fas fa-arrow-left"></i>Về trang chủ
+    </a>
+
     <header>
         <div class="container">
             <div class="header-content">

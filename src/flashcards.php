@@ -341,6 +341,58 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             from {bottom: 30px; opacity: 1;}
             to {bottom: 0; opacity: 0;}
         }
+
+        /* Page Header Styling */
+        .page-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .page-header .back-btn {
+            position: absolute;
+            left: 0;
+            top: -10px;
+        }
+
+        .page-header > div {
+            flex: 1;
+            text-align: center;
+        }
+
+        /* Back Button Styling */
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-btn i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -381,8 +433,13 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         <div class="container">
             <!-- Page Header -->
             <div class="page-header">
-                <h1><i class="fas fa-layer-group"></i> Flashcards</h1>
-                <p>Tạo và quản lý thẻ học từ vựng của bạn</p>
+                <a href="index.php" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>Về trang chủ
+                </a>
+                <div>
+                    <h1><i class="fas fa-layer-group"></i> Flashcards</h1>
+                    <p>Tạo và quản lý thẻ học từ vựng của bạn</p>
+                </div>
             </div>
 
             <?php if (!$isLoggedIn): ?>

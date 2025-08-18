@@ -307,32 +307,33 @@ if (!$lessonId) {
             align-items: center;
         }
 
-        /* Home Button Styling */
-        .home-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Back Button Styling - giống stats.php */
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
             text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+            font-weight: 500;
             transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
+            backdrop-filter: blur(10px);
         }
 
-        .home-btn:hover {
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a4c93 100%);
         }
 
-        .home-btn i {
-            font-size: 1.1rem;
+        @media (max-width: 768px) {
+            .back-btn {
+                position: static;
+                margin-bottom: 2rem;
+                display: inline-block;
+            }
         }
 
         /* User Info Styling */
@@ -382,26 +383,9 @@ if (!$lessonId) {
         // Set login status for JavaScript
         const isUserLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
     </script>
-    <header>
-        <div class="container">
-            <div class="header-content" style="justify-content: space-between; padding: 1rem 0;">
-                <a href="topics.php" class="home-btn">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Quay lại chủ đề</span>
-                </a>
-                <?php if ($isLoggedIn): ?>
-                <div class="user-info">
-                    <span>Xin chào, <?php echo htmlspecialchars($username); ?></span>
-                    <a href="controllers/logout.php" class="logout-btn">Đăng xuất</a>
-                </div>
-                <?php else: ?>
-                <div class="user-info">
-                    <a href="index.php" class="login-btn">Đăng nhập</a>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </header>
+    <a href="index.php" class="back-btn">
+        <i class="fas fa-arrow-left"></i>Về trang chủ
+    </a>
 
     <main class="lesson-container">
         <!-- Lesson Header -->

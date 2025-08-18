@@ -60,9 +60,51 @@ if (!$isLoggedIn) {
             border-radius: 5px;
             margin: 1rem 0;
         }
+
+        /* Back Button Styling */
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-btn i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .back-btn {
+                position: static;
+                margin-bottom: 2rem;
+                display: inline-block;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Back to Home Button -->
+    <a href="index.php" class="back-btn">
+        <i class="fas fa-arrow-left"></i>Về trang chủ
+    </a>
+
     <div class="container">
         <h1><i class="fas fa-chart-bar"></i> Test Thống kê</h1>
         <p>Trang này giúp test xem thống kê có cập nhật chính xác không khi làm bài tập.</p>
@@ -89,9 +131,6 @@ if (!$isLoggedIn) {
             </button>
             <a href="stats.php" class="btn" style="text-decoration: none;">
                 <i class="fas fa-chart-line"></i> Xem Trang Thống kê
-            </a>
-            <a href="index.php" class="btn" style="text-decoration: none;">
-                <i class="fas fa-home"></i> Về Trang chủ
             </a>
         </div>
     </div>

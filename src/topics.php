@@ -85,6 +85,7 @@ $username = $_SESSION['username'] ?? '';
             margin-bottom: 1rem;
             font-weight: 700;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Căn giữa tiêu đề */
         }
 
         .page-subtitle {
@@ -356,42 +357,38 @@ $username = $_SESSION['username'] ?? '';
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Home Button Styling */
-        .home-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            color: #667eea;
+        /* Back Button Styling - giống stats.php */
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 1rem; /* Di chuyển sang trái hơn */
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
             text-decoration: none;
-            border-radius: 15px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(255, 255, 255, 0.3);
+            font-weight: 500;
             transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
         }
 
-        .home-btn:hover {
-            transform: translateY(-3px);
-            box-shadow:
-                0 12px 40px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 1);
-            color: #5a6fd8;
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
-        .home-btn i {
-            font-size: 1.2rem;
-        }
+        @media (max-width: 768px) {
+            .back-btn {
+                position: static;
+                margin-bottom: 2rem;
+                display: inline-block;
+            }
 
-        .home-btn span {
-            font-weight: 600;
+            .page-title {
+                margin-left: 0; /* Bỏ margin trên mobile */
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -402,16 +399,9 @@ $username = $_SESSION['username'] ?? '';
         // Set login status for JavaScript
         const isUserLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
     </script>
-    <header>
-        <div class="container">
-            <div class="header-content" style="justify-content: flex-start; padding: 1rem 0;">
-                <a href="index.php" class="home-btn">
-                    <i class="fas fa-home"></i>
-                    <span>Quay về trang chủ</span>
-                </a>
-            </div>
-        </div>
-    </header>
+    <a href="index.php" class="back-btn">
+        <i class="fas fa-arrow-left"></i>Trang chủ
+    </a>
 
     <main class="topics-container">
         <div class="page-header">

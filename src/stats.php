@@ -245,7 +245,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 <body>
     <div class="stats-page">
         <a href="index.php" class="back-btn">
-            <i class="fas fa-arrow-left"></i> Về trang chủ
+            <i class="fas fa-arrow-left"></i>Về trang chủ
         </a>
 
         <div class="stats-container">
