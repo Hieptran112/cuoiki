@@ -20,14 +20,23 @@ switch ($action) {
         getLessonExercises();
         break;
     case 'submit_topic_exercise':
+        requireLogin();
         submitTopicExercise();
         break;
     case 'get_topic_progress':
+        requireLogin();
         getTopicProgress();
         break;
     default:
         echo json_encode(["success" => false, "message" => "Action không hợp lệ"]);
         break;
+}
+
+function requireLogin() {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(["success" => false, "message" => "Vui lòng đăng nhập để thực hiện chức năng này"]);
+        exit;
+    }
 }
 
 function getTopics() {

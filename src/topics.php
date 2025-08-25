@@ -118,6 +118,9 @@ $username = $_SESSION['username'] ?? '';
             border: 1px solid rgba(255, 255, 255, 0.3);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .topic-card::before {
@@ -173,12 +176,14 @@ $username = $_SESSION['username'] ?? '';
             color: #7f8c8d;
             margin-bottom: 1.5rem;
             line-height: 1.6;
+            flex-grow: 1; /* Cho phép mở rộng để đẩy topic-stats xuống dưới */
         }
 
         .topic-stats {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: auto; /* Đẩy xuống dưới cùng */
         }
 
         .lesson-count {
@@ -371,6 +376,7 @@ $username = $_SESSION['username'] ?? '';
             font-weight: 500;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            z-index: 1000; /* Đảm bảo hiển thị trên cùng */
         }
 
         .back-btn:hover {

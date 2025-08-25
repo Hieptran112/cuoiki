@@ -64,11 +64,16 @@ switch ($action) {
     case 'search_all':
         searchAll();
         break;
+    case 'extract_words':
     case 'extract_keywords':
         extractKeywords();
         break;
     case 'lookup_specialized':
         lookupSpecialized();
+        break;
+    case 'add_words_to_decks':
+        requireLogin();
+        addWordsToDecks();
         break;
     default:
         echo json_encode(["success" => false, "message" => "Action không hợp lệ"]);
@@ -453,6 +458,9 @@ function extractKeywords() {
     $domain = trim($data['domain'] ?? '');
     if ($text === '') { echo json_encode(["success"=>false, "message"=>"Văn bản trống"]); return; }
 
+    // Ensure basic dictionary entries exist
+    ensureBasicDictionary();
+
     // Tokenize english-like words
     $matches = [];
     preg_match_all('/[A-Za-z][A-Za-z\-]{'.max(1,$minLen-1).',}/', $text, $matches);
@@ -479,10 +487,16 @@ function extractKeywords() {
     }
     $stmtSpecWord = $conn->prepare("SELECT domain, word, vietnamese, english_definition, example FROM specialized_terms WHERE word = ? LIMIT 1");
 
+    // Check if tables exist
+    $dictExists = $conn->query("SHOW TABLES LIKE 'dictionary'")->num_rows > 0;
+    $specExists = $conn->query("SHOW TABLES LIKE 'specialized_terms'")->num_rows > 0;
+
     foreach ($candidates as $w) {
         $entry = [ 'word' => $w, 'source' => 'none', 'domain' => null, 'vietnamese' => null, 'english_definition' => null, 'example' => null, 'dictionary_id' => null ];
+        $found = false;
+
         // specialized first if domain
-        if ($domain !== '' && $stmtSpecWordDom) {
+        if ($domain !== '' && $stmtSpecWordDom && $specExists) {
             $stmtSpecWordDom->bind_param('ss', $domain, $w);
             $stmtSpecWordDom->execute();
             $rs = $stmtSpecWordDom->get_result();
@@ -493,35 +507,47 @@ function extractKeywords() {
                 $entry['vietnamese'] = $row['vietnamese'];
                 $entry['english_definition'] = $row['english_definition'];
                 $entry['example'] = $row['example'];
+                $found = true;
                 $suggestions[] = $entry; continue;
             }
         }
         // specialized any domain
-        $stmtSpecWord->bind_param('s', $w);
-        $stmtSpecWord->execute();
-        $rs = $stmtSpecWord->get_result();
-        if ($rs && $rs->num_rows > 0) {
-            $row = $rs->fetch_assoc();
-            $entry['source'] = 'specialized';
-            $entry['domain'] = $row['domain'];
-            $entry['vietnamese'] = $row['vietnamese'];
-            $entry['english_definition'] = $row['english_definition'];
-            $entry['example'] = $row['example'];
-            $suggestions[] = $entry; continue;
+        if (!$found && $specExists) {
+            $stmtSpecWord->bind_param('s', $w);
+            $stmtSpecWord->execute();
+            $rs = $stmtSpecWord->get_result();
+            if ($rs && $rs->num_rows > 0) {
+                $row = $rs->fetch_assoc();
+                $entry['source'] = 'specialized';
+                $entry['domain'] = $row['domain'];
+                $entry['vietnamese'] = $row['vietnamese'];
+                $entry['english_definition'] = $row['english_definition'];
+                $entry['example'] = $row['example'];
+                $found = true;
+                $suggestions[] = $entry; continue;
+            }
         }
+
         // fallback to dictionary
-        $stmtDict->bind_param('s', $w);
-        $stmtDict->execute();
-        $rd = $stmtDict->get_result();
-        if ($rd && $rd->num_rows > 0) {
-            $row = $rd->fetch_assoc();
-            $entry['source'] = 'dictionary';
-            $entry['dictionary_id'] = $row['id'];
-            $entry['vietnamese'] = $row['vietnamese'];
-            $entry['english_definition'] = $row['english_definition'];
-            $entry['example'] = $row['example'];
+        if (!$found && $dictExists) {
+            $stmtDict->bind_param('s', $w);
+            $stmtDict->execute();
+            $rd = $stmtDict->get_result();
+            if ($rd && $rd->num_rows > 0) {
+                $row = $rd->fetch_assoc();
+                $entry['source'] = 'dictionary';
+                $entry['dictionary_id'] = $row['id'];
+                $entry['vietnamese'] = $row['vietnamese'];
+                $entry['english_definition'] = $row['english_definition'];
+                $entry['example'] = $row['example'];
+                $found = true;
+            }
         }
-        $suggestions[] = $entry;
+
+        // Only add entries that were found in dictionary
+        if ($found) {
+            $suggestions[] = $entry;
+        }
     }
 
     echo json_encode([ 'success' => true, 'data' => $suggestions ]);
@@ -550,6 +576,114 @@ function lookupSpecialized() {
     $row = $stmt->get_result()->fetch_assoc();
     if ($row) { echo json_encode([ 'success'=>true, 'data'=>$row ]); return; }
     echo json_encode([ 'success'=>false, 'message'=>'Không tìm thấy' ]);
+}
+
+function addWordsToDecks() {
+    global $conn;
+    $data = json_decode(file_get_contents('php://input'), true);
+    $words = $data['words'] ?? [];
+    $deckIds = $data['deck_ids'] ?? [];
+
+    if (empty($words) || empty($deckIds)) {
+        echo json_encode(["success" => false, "message" => "Thiếu dữ liệu từ vựng hoặc bộ thẻ"]);
+        return;
+    }
+
+    // Validate deck ownership
+    $validDecks = [];
+    $ownStmt = $conn->prepare("SELECT id FROM decks WHERE id = ? AND user_id = ?");
+    foreach ($deckIds as $deckId) {
+        $deckId = (int)$deckId;
+        if ($deckId <= 0) continue;
+        $ownStmt->bind_param("ii", $deckId, $_SESSION['user_id']);
+        $ownStmt->execute();
+        if ($ownStmt->get_result()->num_rows > 0) {
+            $validDecks[] = $deckId;
+        }
+    }
+
+    if (empty($validDecks)) {
+        echo json_encode(["success" => false, "message" => "Không có bộ thẻ hợp lệ"]);
+        return;
+    }
+
+    $insertStmt = $conn->prepare("INSERT IGNORE INTO flashcards (deck_id, word, definition, example) VALUES (?, ?, ?, ?)");
+    $totalAdded = 0;
+
+    foreach ($words as $word) {
+        $wordText = trim($word['word'] ?? '');
+        $definition = trim($word['definition'] ?? '');
+        $example = trim($word['example'] ?? '');
+
+        if (empty($wordText) || empty($definition)) continue;
+
+        foreach ($validDecks as $deckId) {
+            $insertStmt->bind_param("isss", $deckId, $wordText, $definition, $example);
+            if ($insertStmt->execute() && $insertStmt->affected_rows > 0) {
+                $totalAdded++;
+            }
+        }
+    }
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Đã thêm $totalAdded từ vào bộ thẻ",
+        "added_count" => $totalAdded
+    ]);
+}
+
+function ensureBasicDictionary() {
+    global $conn;
+
+    // Create dictionary table if not exists
+    $conn->query("CREATE TABLE IF NOT EXISTS dictionary (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        word VARCHAR(255) NOT NULL UNIQUE,
+        vietnamese TEXT,
+        english_definition TEXT,
+        example TEXT,
+        part_of_speech VARCHAR(50) DEFAULT 'noun',
+        difficulty ENUM('beginner', 'intermediate', 'advanced') DEFAULT 'beginner',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_word (word)
+    )");
+
+    // Check if dictionary has basic words
+    $result = $conn->query("SELECT COUNT(*) as count FROM dictionary");
+    if (!$result) return; // Table doesn't exist or error
+
+    $count = $result->fetch_assoc()['count'];
+    if ($count > 10) return; // Already has data
+
+    // Add basic words for testing
+    $basicWords = [
+        ['word' => 'cat', 'vietnamese' => 'mèo', 'english_definition' => 'a small domesticated carnivorous mammal'],
+        ['word' => 'dog', 'vietnamese' => 'chó', 'english_definition' => 'a domesticated carnivorous mammal'],
+        ['word' => 'water', 'vietnamese' => 'nước', 'english_definition' => 'a colorless, transparent, odorless liquid'],
+        ['word' => 'apple', 'vietnamese' => 'táo', 'english_definition' => 'the round fruit of a tree'],
+        ['word' => 'book', 'vietnamese' => 'sách', 'english_definition' => 'a written or printed work'],
+        ['word' => 'house', 'vietnamese' => 'nhà', 'english_definition' => 'a building for human habitation'],
+        ['word' => 'car', 'vietnamese' => 'xe hơi', 'english_definition' => 'a road vehicle with an engine'],
+        ['word' => 'tree', 'vietnamese' => 'cây', 'english_definition' => 'a woody perennial plant'],
+        ['word' => 'sun', 'vietnamese' => 'mặt trời', 'english_definition' => 'the star around which the earth orbits'],
+        ['word' => 'moon', 'vietnamese' => 'mặt trăng', 'english_definition' => 'the natural satellite of the earth'],
+        ['word' => 'good', 'vietnamese' => 'tốt', 'english_definition' => 'to be desired or approved of'],
+        ['word' => 'bad', 'vietnamese' => 'xấu', 'english_definition' => 'of poor quality or low standard'],
+        ['word' => 'big', 'vietnamese' => 'lớn', 'english_definition' => 'of considerable size or extent'],
+        ['word' => 'small', 'vietnamese' => 'nhỏ', 'english_definition' => 'of a size that is less than normal'],
+        ['word' => 'happy', 'vietnamese' => 'vui', 'english_definition' => 'feeling or showing pleasure'],
+        ['word' => 'sad', 'vietnamese' => 'buồn', 'english_definition' => 'feeling or showing sorrow'],
+        ['word' => 'love', 'vietnamese' => 'yêu', 'english_definition' => 'an intense feeling of deep affection'],
+        ['word' => 'time', 'vietnamese' => 'thời gian', 'english_definition' => 'the indefinite continued progress of existence'],
+        ['word' => 'life', 'vietnamese' => 'cuộc sống', 'english_definition' => 'the condition that distinguishes animals and plants'],
+        ['word' => 'work', 'vietnamese' => 'công việc', 'english_definition' => 'activity involving mental or physical effort']
+    ];
+
+    $stmt = $conn->prepare("INSERT IGNORE INTO dictionary (word, vietnamese, english_definition, part_of_speech, difficulty) VALUES (?, ?, ?, 'noun', 'beginner')");
+    foreach ($basicWords as $word) {
+        $stmt->bind_param("sss", $word['word'], $word['vietnamese'], $word['english_definition']);
+        $stmt->execute();
+    }
 }
 
 ?>

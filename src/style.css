@@ -1,11 +1,11 @@
-/* Importing Google Fonts - Poppins */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+/* Importing Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 :root {
@@ -360,7 +360,7 @@ body.dark-theme .theme-toggle-indicator {
       background-size: cover; /* Phủ kín toàn bộ trang */
       background-position: center; /* Căn giữa hình nền */
       background-attachment: fixed; /* Giữ cố định hình nền khi cuộn trang */
-      font-family: sans-serif; /* Sử dụng font chữ dễ đọc */
+      font-family: "Inter", sans-serif; /* Sử dụng font chữ dễ đọc */
       margin: 0;
       padding: 0;
     }

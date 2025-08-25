@@ -131,11 +131,42 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         }
 
         .section {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2.5rem;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 30px 80px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .section:hover::before {
+            opacity: 1;
         }
 
         .section-title {
@@ -257,6 +288,231 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         .word-source {
             color: #999;
             font-size: 0.8rem;
+        }
+
+        /* Enhanced Deck Cards */
+        .deck-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .deck-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .deck-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .deck-card:hover::before {
+            opacity: 1;
+        }
+
+        .deck-card.selected {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .deck-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .deck-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .deck-description {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .deck-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .deck-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .deck-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .deck-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .deck-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Enhanced Study Card */
+        .study-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            cursor: pointer;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease, transform 0.15s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transform-style: preserve-3d;
+        }
+
+        .study-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .study-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .study-card:hover::before {
+            opacity: 0.05;
+        }
+
+        .study-card.flipped {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .study-card.flipped::before {
+            opacity: 0.1;
+        }
+
+        .study-card-content {
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        /* Enhanced Rating Buttons */
+        .rating-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .rating-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            min-width: 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rating-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .rating-btn:hover::before {
+            left: 100%;
+        }
+
+        .rating-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .rating-again {
+            background: #dc3545;
+            color: white;
+        }
+
+        .rating-hard {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .rating-good {
+            background: #667eea;
+            color: white;
+        }
+
+        .rating-easy {
+            background: #28a745;
+            color: white;
         }
 
         /* Responsive */
@@ -412,13 +668,16 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 <nav>
                     <ul class="nav-menu">
                         <li><a href="index.php">Trang chủ</a></li>
+                        <li><a href="topics.php">Chủ đề</a></li>
                         <li><a href="flashcards.php">Flashcards</a></li>
+                        <li><a href="listening.php">Nghe</a></li>
                         <li><a href="stats.php">Thống kê</a></li>
                     </ul>
                 </nav>
                 <div class="user-info">
                     <?php if ($isLoggedIn): ?>
                         <span>Xin chào, <?php echo htmlspecialchars($username); ?></span>
+                        <a href="profile.php" class="btn btn-primary">Hồ sơ</a>
                         <a href="controllers/logout.php" class="btn btn-secondary">Đăng xuất</a>
                     <?php else: ?>
                         <a href="index.php" class="btn btn-primary">Đăng nhập</a>
@@ -505,7 +764,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
                 <!-- Create Deck -->
                 <div class="import-section">
-                    <h4>Tạo bộ thẻ mới</h4>
+                    <h4 style="margin-bottom: 1.5rem;">Tạo bộ thẻ mới</h4>
                     <div class="import-controls">
                         <input id="deck-name" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Tên bộ thẻ" />
                         <input id="deck-desc" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Mô tả (tuỳ chọn)" />
@@ -521,7 +780,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
                 <!-- My Decks -->
                 <div class="results-container">
-                    <h4>Bộ thẻ của tôi</h4>
+                    <h4 style="margin-bottom: 1.5rem;">Bộ thẻ của tôi</h4>
                     <div id="deck-list">
                         <!-- Decks will be loaded here -->
                     </div>
@@ -546,14 +805,24 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 <!-- Study Mode -->
                 <div id="study-panel" class="results-container" style="display:none;">
                     <h4>Chế độ học</h4>
-                    <div id="study-card" style="background: #f8f9fa; border: 2px solid #e1e5e9; border-radius: 12px; padding: 2rem; cursor: pointer; min-height: 120px; display: flex; align-items: center; justify-content: center; font-weight: 600; text-align: center;" onclick="flipCard()">
-                        Nhấn để lật thẻ
+                    <div id="study-card" class="study-card" onclick="flipCard()">
+                        <div class="study-card-content">
+                            Nhấn để lật thẻ
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
-                        <button class="btn btn-secondary" onclick="requireLogin(() => rateCard('again'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Lại</button>
-                        <button class="btn" style="background: #ffc107; color: white;" onclick="requireLogin(() => rateCard('hard'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Khó nhớ</button>
-                        <button class="btn btn-primary" onclick="requireLogin(() => rateCard('good'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Nhớ tốt</button>
-                        <button class="btn" style="background: #28a745; color: white;" onclick="requireLogin(() => rateCard('easy'), 'Bạn cần đăng nhập để đánh giá thẻ.')">Rất dễ</button>
+                    <div class="rating-buttons">
+                        <button class="rating-btn rating-again" onclick="requireLogin(() => rateCard('again'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
+                            <i class="fas fa-times"></i> Lại
+                        </button>
+                        <button class="rating-btn rating-hard" onclick="requireLogin(() => rateCard('hard'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
+                            <i class="fas fa-exclamation"></i> Khó nhớ
+                        </button>
+                        <button class="rating-btn rating-good" onclick="requireLogin(() => rateCard('good'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
+                            <i class="fas fa-check"></i> Nhớ tốt
+                        </button>
+                        <button class="rating-btn rating-easy" onclick="requireLogin(() => rateCard('easy'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
+                            <i class="fas fa-star"></i> Rất dễ
+                        </button>
                     </div>
                 </div>
 
@@ -568,6 +837,15 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     </div>
                     <div id="my-search-results" style="margin-top: 1rem;">
                         <!-- Search results will be displayed here -->
+                    </div>
+
+                    <!-- Dictionary Search Fallback -->
+                    <div id="dictionary-search-section" style="margin-top: 2rem; display: none;">
+                        <h4>Tìm kiếm trong từ điển</h4>
+                        <p style="color: #666; margin-bottom: 1rem;">Không tìm thấy trong bộ thẻ? Tìm kiếm trong từ điển và thêm vào bộ thẻ:</p>
+                        <div id="dictionary-search-results">
+                            <!-- Dictionary search results will be displayed here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -591,6 +869,15 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         }
 
         <?php if ($isLoggedIn): ?>
+        // Authentication helper
+        function requireLogin(callback, message = 'Bạn cần đăng nhập để thực hiện chức năng này.') {
+            <?php if ($isLoggedIn): ?>
+            callback();
+            <?php else: ?>
+            showSnackbar(message, 'error');
+            <?php endif; ?>
+        }
+
         // Extract words function
         function extractWords() {
             const text = document.getElementById('import-text').value.trim();
@@ -622,10 +909,16 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 extractBtn.disabled = false;
                 extractBtn.innerHTML = '<i class="fas fa-magic"></i> Trích xuất từ vựng';
 
-                if (data.success && data.data.length > 0) {
-                    displayExtractResults(data.data);
+                console.log('Extract response:', data); // Debug log
+
+                if (data.success) {
+                    if (data.data && data.data.length > 0) {
+                        displayExtractResults(data.data);
+                    } else {
+                        results.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Không tìm thấy từ vựng phù hợp trong từ điển. Hãy thử với văn bản khác hoặc giảm độ dài tối thiểu.</p>';
+                    }
                 } else {
-                    results.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Không tìm thấy từ vựng phù hợp.</p>';
+                    results.innerHTML = `<p style="text-align: center; color: #f44336; padding: 2rem;">Lỗi: ${data.message || 'Không thể trích xuất từ vựng'}</p>`;
                 }
             })
             .catch(err => {
@@ -683,9 +976,92 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 return;
             }
 
-            // For now, just show success message
-            // In a real implementation, this would open a modal to select deck
-            showSnackbar(`Đã chọn ${checkboxes.length} từ để thêm vào bộ thẻ`, 'success');
+            // Get selected words
+            const words = Array.from(checkboxes).map(cb => ({
+                word: cb.dataset.word,
+                definition: cb.dataset.def,
+                example: cb.dataset.example || ''
+            }));
+
+            // Show deck selection modal
+            showDeckSelectionModal(words);
+        }
+
+        function showDeckSelectionModal(words) {
+            // Create modal HTML
+            const modalHtml = `
+                <div id="deck-selection-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; padding: 2rem; border-radius: 10px; max-width: 500px; width: 90%;">
+                        <h3>Chọn bộ thẻ để thêm ${words.length} từ</h3>
+                        <div id="deck-selection-list" style="margin: 1rem 0; max-height: 300px; overflow-y: auto;">
+                            <p>Đang tải danh sách bộ thẻ...</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button class="btn btn-secondary" onclick="closeDeckSelectionModal()">Hủy</button>
+                            <button class="btn btn-primary" onclick="addToSelectedDecks(${JSON.stringify(words).replace(/"/g, '&quot;')})">Thêm vào bộ thẻ</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            loadDecksForSelection();
+        }
+
+        function loadDecksForSelection() {
+            fetch('controllers/flashcards.php?action=list_decks', { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const html = data.data.map(deck => `
+                            <label style="display: block; margin: 0.5rem 0; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;">
+                                <input type="checkbox" name="selected-decks" value="${deck.id}" style="margin-right: 0.5rem;">
+                                <strong>${deck.name}</strong>
+                                ${deck.description ? `<br><small style="color: #666;">${deck.description}</small>` : ''}
+                            </label>
+                        `).join('');
+                        document.getElementById('deck-selection-list').innerHTML = html || '<p>Không có bộ thẻ nào.</p>';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading decks:', err);
+                    document.getElementById('deck-selection-list').innerHTML = '<p style="color: red;">Có lỗi xảy ra khi tải danh sách bộ thẻ.</p>';
+                });
+        }
+
+        function closeDeckSelectionModal() {
+            const modal = document.getElementById('deck-selection-modal');
+            if (modal) modal.remove();
+        }
+
+        function addToSelectedDecks(words) {
+            const selectedDecks = Array.from(document.querySelectorAll('input[name="selected-decks"]:checked')).map(cb => cb.value);
+
+            if (selectedDecks.length === 0) {
+                showSnackbar('Vui lòng chọn ít nhất một bộ thẻ', 'error');
+                return;
+            }
+
+            fetch('controllers/flashcards.php?action=add_words_to_decks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ words: words, deck_ids: selectedDecks })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showSnackbar(data.message, data.success ? 'success' : 'error');
+                if (data.success) {
+                    closeDeckSelectionModal();
+                    // Clear extract results
+                    document.getElementById('extract-results').innerHTML = '';
+                    document.getElementById('import-text').value = '';
+                }
+            })
+            .catch(err => {
+                console.error('Error adding words:', err);
+                showSnackbar('Có lỗi xảy ra khi thêm từ vào bộ thẻ', 'error');
+            });
         }
 
         // Flashcards Management
@@ -735,15 +1111,33 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     }
 
                     const html = data.data.map(deck => `
-                        <div class="word-suggestion">
-                            <div class="word-info">
-                                <div class="word-name">${deck.name}</div>
-                                <div class="word-meaning">${deck.description || 'Không có mô tả'}</div>
-                                <div class="word-source">${deck.visibility === 'public' ? 'Công khai' : 'Riêng tư'}</div>
+                        <div class="deck-card ${selectedDeckId === deck.id ? 'selected' : ''}" onclick="selectDeck(${deck.id}, '${deck.name.replace(/'/g, "\\'")}')">
+                            <div class="deck-header">
+                                <div>
+                                    <div class="deck-name">${deck.name}</div>
+                                    <div class="deck-description">${deck.description || 'Không có mô tả'}</div>
+                                </div>
+                                <div style="opacity: 0.7;">
+                                    <i class="fas ${deck.visibility === 'public' ? 'fa-globe' : 'fa-lock'}"></i>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary" onclick="selectDeck(${deck.id}, '${deck.name.replace(/'/g, "\\'")}')">Chọn</button>
-                                <button class="btn btn-secondary" onclick="deleteDeck(${deck.id})">Xóa</button>
+                            <div class="deck-stats">
+                                <div class="deck-stat">
+                                    <i class="fas fa-cards-blank"></i>
+                                    <span>${deck.card_count || 0} thẻ</span>
+                                </div>
+                                <div class="deck-stat">
+                                    <i class="fas fa-eye"></i>
+                                    <span>${deck.visibility === 'public' ? 'Công khai' : 'Riêng tư'}</span>
+                                </div>
+                            </div>
+                            <div class="deck-actions" onclick="event.stopPropagation()">
+                                <button class="deck-btn" onclick="selectDeck(${deck.id}, '${deck.name.replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-play"></i> Học
+                                </button>
+                                <button class="deck-btn" onclick="deleteDeck(${deck.id})">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
                             </div>
                         </div>
                     `).join('');
@@ -761,8 +1155,16 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             document.getElementById('deck-title').textContent = `Quản lý thẻ - ${name}`;
             document.getElementById('deck-detail').style.display = 'block';
             document.getElementById('study-panel').style.display = 'block';
+
+            // Update deck card selection
+            document.querySelectorAll('.deck-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.deck-card')?.classList.add('selected');
+
             loadFlashcards();
             loadStudyQueue();
+            showSnackbar(`Đã chọn bộ thẻ: ${name}`, 'success');
         }
 
         function deleteDeck(id) {
@@ -905,17 +1307,50 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
         function renderStudyCard() {
             const el = document.getElementById('study-card');
+            const content = el.querySelector('.study-card-content');
+
             if (!studyQueue.length) {
-                el.textContent = 'Không còn thẻ để học.';
+                content.innerHTML = '<div style="color: #666;"><i class="fas fa-info-circle"></i><br>Không còn thẻ để học.</div>';
                 return;
             }
+
             const cur = studyQueue[studyIndex % studyQueue.length];
-            el.textContent = showingBack ? (cur.definition || '') : (cur.word || '');
+            const progress = `${studyIndex + 1}/${studyQueue.length}`;
+
+            if (showingBack) {
+                content.innerHTML = `
+                    <div style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Định nghĩa</div>
+                    <div style="font-size: 1.1rem; line-height: 1.4;">${cur.definition || 'Không có định nghĩa'}</div>
+                    ${cur.example ? `<div style="margin-top: 1rem; font-size: 0.9rem; font-style: italic; opacity: 0.9;">Ví dụ: ${cur.example}</div>` : ''}
+                    <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.7;">${progress}</div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Từ vựng</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">${cur.word || 'Không có từ'}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.7;">Nhấn để xem định nghĩa</div>
+                    <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.7;">${progress}</div>
+                `;
+            }
         }
 
         function flipCard() {
             showingBack = !showingBack;
-            renderStudyCard();
+            const card = document.getElementById('study-card');
+
+            // Add flip animation
+            card.style.transform = 'rotateY(180deg)';
+            setTimeout(() => {
+                renderStudyCard();
+                card.style.transform = 'rotateY(0deg)';
+
+                // Add flipped class for styling
+                if (showingBack) {
+                    card.classList.add('flipped');
+                } else {
+                    card.classList.remove('flipped');
+                }
+            }, 150);
         }
 
         function rateCard(rating) {
@@ -973,10 +1408,81 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 `).join('');
 
                 document.getElementById('my-search-results').innerHTML = html || '<p style="color: #666;">Không tìm thấy.</p>';
+
+                // If no results found, search dictionary
+                if (data.data.length === 0) {
+                    searchDictionaryFallback(q);
+                } else {
+                    document.getElementById('dictionary-search-section').style.display = 'none';
+                }
             })
             .catch(err => {
                 console.error('Error searching flashcards:', err);
                 document.getElementById('my-search-results').innerHTML = '<p style="color: #666;">Có lỗi xảy ra khi tìm kiếm</p>';
+            });
+        }
+
+        function searchDictionaryFallback(query) {
+            document.getElementById('dictionary-search-section').style.display = 'block';
+            document.getElementById('dictionary-search-results').innerHTML = '<p>Đang tìm kiếm trong từ điển...</p>';
+
+            fetch(`controllers/flashcards.php?action=search_all&q=${encodeURIComponent(query)}`, { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.data.dictionary.length > 0) {
+                        const html = data.data.dictionary.map(word => `
+                            <div class="word-suggestion">
+                                <div class="word-info">
+                                    <div class="word-name">${word.word}</div>
+                                    <div class="word-meaning">${word.vietnamese}</div>
+                                    ${word.english_definition ? `<div class="word-meaning" style="color: #555;">${word.english_definition}</div>` : ''}
+                                </div>
+                                <button class="btn btn-primary" onclick="addWordToDeck('${word.word}', '${word.vietnamese}', '${word.english_definition || ''}', ${word.id})">
+                                    Thêm vào bộ thẻ
+                                </button>
+                            </div>
+                        `).join('');
+                        document.getElementById('dictionary-search-results').innerHTML = html;
+                    } else {
+                        document.getElementById('dictionary-search-results').innerHTML = '<p style="color: #666;">Không tìm thấy từ nào trong từ điển.</p>';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error searching dictionary:', err);
+                    document.getElementById('dictionary-search-results').innerHTML = '<p style="color: red;">Có lỗi xảy ra khi tìm kiếm từ điển.</p>';
+                });
+        }
+
+        function addWordToDeck(word, vietnamese, englishDef, dictionaryId) {
+            if (!selectedDeckId) {
+                showSnackbar('Vui lòng chọn bộ thẻ trước', 'error');
+                return;
+            }
+
+            const definition = vietnamese + (englishDef ? ` (${englishDef})` : '');
+
+            fetch('controllers/flashcards.php?action=create_flashcard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    deck_id: selectedDeckId,
+                    word: word,
+                    definition: definition,
+                    example: '',
+                    source_dictionary_id: dictionaryId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showSnackbar(data.message, data.success ? 'success' : 'error');
+                if (data.success) {
+                    loadFlashcards();
+                }
+            })
+            .catch(err => {
+                console.error('Error adding word:', err);
+                showSnackbar('Có lỗi xảy ra khi thêm từ', 'error');
             });
         }
 
