@@ -393,127 +393,11 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             transform: translateY(-1px);
         }
 
-        /* Enhanced Study Card */
-        .study-card {
-            background: white;
-            border: 2px solid #e1e5e9;
-            border-radius: 20px;
-            padding: 3rem 2rem;
-            cursor: pointer;
-            min-height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            text-align: center;
-            font-size: 1.2rem;
-            transition: all 0.3s ease, transform 0.15s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transform-style: preserve-3d;
-        }
 
-        .study-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
 
-        .study-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
-        }
 
-        .study-card:hover::before {
-            opacity: 0.05;
-        }
 
-        .study-card.flipped {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-        }
 
-        .study-card.flipped::before {
-            opacity: 0.1;
-        }
-
-        .study-card-content {
-            position: relative;
-            z-index: 1;
-            max-width: 100%;
-            word-wrap: break-word;
-        }
-
-        /* Enhanced Rating Buttons */
-        .rating-buttons {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .rating-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            min-width: 100px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .rating-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .rating-btn:hover::before {
-            left: 100%;
-        }
-
-        .rating-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .rating-again {
-            background: #dc3545;
-            color: white;
-        }
-
-        .rating-hard {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .rating-good {
-            background: #667eea;
-            color: white;
-        }
-
-        .rating-easy {
-            background: #28a745;
-            color: white;
-        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -726,7 +610,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <textarea 
                             id="import-text" 
                             class="import-textarea" 
-                            placeholder="Dán văn bản tiếng Anh vào đây để trích xuất từ vựng...&#10;&#10;Ví dụ: 'The quick brown fox jumps over the lazy dog. This sentence contains many common English words that can be extracted and added to your flashcard collection.'"
+                            placeholder="Dán văn bản tiếng Anh vào đây để trích xuất từ vựng...&#10;&#10;Ví dụ:&#10;• I am Long. I am a student.&#10;• My family has four people. My father works in a company.&#10;• I like to read books and watch movies.&#10;• The weather is beautiful today. The sun is shining.&#10;&#10;Hệ thống sẽ tự động tìm và trích xuất các từ vựng có trong từ điển để bạn học!"
                         ></textarea>
                     </div>
                     <div class="import-controls">
@@ -736,8 +620,10 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <label>
                             Độ dài tối thiểu: 
                             <select id="min-length" style="padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd;">
-                                <option value="3">3 ký tự</option>
-                                <option value="4" selected>4 ký tự</option>
+                                <option value="1">1 ký tự (tất cả từ)</option>
+                                <option value="2">2 ký tự</option>
+                                <option value="3" selected>3 ký tự</option>
+                                <option value="4">4 ký tự</option>
                                 <option value="5">5 ký tự</option>
                                 <option value="6">6 ký tự</option>
                             </select>
@@ -802,36 +688,14 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     </div>
                 </div>
 
-                <!-- Study Mode -->
-                <div id="study-panel" class="results-container" style="display:none;">
-                    <h4>Chế độ học</h4>
-                    <div id="study-card" class="study-card" onclick="flipCard()">
-                        <div class="study-card-content">
-                            Nhấn để lật thẻ
-                        </div>
-                    </div>
-                    <div class="rating-buttons">
-                        <button class="rating-btn rating-again" onclick="requireLogin(() => rateCard('again'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
-                            <i class="fas fa-times"></i> Lại
-                        </button>
-                        <button class="rating-btn rating-hard" onclick="requireLogin(() => rateCard('hard'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
-                            <i class="fas fa-exclamation"></i> Khó nhớ
-                        </button>
-                        <button class="rating-btn rating-good" onclick="requireLogin(() => rateCard('good'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
-                            <i class="fas fa-check"></i> Nhớ tốt
-                        </button>
-                        <button class="rating-btn rating-easy" onclick="requireLogin(() => rateCard('easy'), 'Bạn cần đăng nhập để đánh giá thẻ.')">
-                            <i class="fas fa-star"></i> Rất dễ
-                        </button>
-                    </div>
-                </div>
+
 
                 <!-- Search Flashcards -->
                 <div class="results-container">
                     <h4>Tìm kiếm trong bộ thẻ của tôi</h4>
                     <div class="import-controls">
-                        <input id="my-search" class="import-textarea" style="min-height: auto; padding: 0.75rem;" placeholder="Nhập từ khoá" />
-                        <button class="import-btn" onclick="searchMyFlashcards()">
+                        <input id="my-search" class="import-textarea" style="min-height: auto; padding: 0.75rem; flex: 1;" placeholder="Nhập từ khoá" />
+                        <button class="import-btn" onclick="searchMyFlashcards()" style="flex-shrink: 0;">
                             <i class="fas fa-search"></i> Tìm kiếm
                         </button>
                     </div>
@@ -897,11 +761,16 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             loading.style.display = 'block';
             results.innerHTML = '';
 
-            fetch('controllers/flashcards.php?action=extract_words', {
+            fetch('controllers/flashcards.php?action=extract_keywords', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ text: text, min_length: minLength })
+                body: JSON.stringify({
+                    text: text,
+                    min_length: minLength,
+                    top_k: 50,
+                    domain: ''
+                })
             })
             .then(res => res.json())
             .then(data => {

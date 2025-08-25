@@ -1299,14 +1299,28 @@
             const word = window.lastDictionaryResult;
 
             // Get user's decks first
-            fetch('controllers/flashcards.php?action=get_decks')
-                .then(res => res.json())
+            fetch('controllers/flashcards.php?action=get_decks', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(res => {
+                    console.log('Response status:', res.status);
+                    return res.json();
+                })
                 .then(data => {
-                    if (data.success && data.data.length > 0) {
-                        // Show deck selection modal
-                        showDeckSelectionModal(word, data.data);
+                    console.log('Decks response:', data);
+                    if (data.success) {
+                        if (data.data && data.data.length > 0) {
+                            // Show deck selection modal
+                            showDeckSelectionModal(word, data.data);
+                        } else {
+                            showSnackbar('Bạn chưa có bộ thẻ nào. Hãy tạo bộ thẻ trước.', 'error');
+                        }
                     } else {
-                        showSnackbar('Bạn chưa có bộ thẻ nào. Hãy tạo bộ thẻ trước.', 'error');
+                        showSnackbar(data.message || 'Có lỗi xảy ra khi tải danh sách bộ thẻ', 'error');
                     }
                 })
                 .catch(err => {

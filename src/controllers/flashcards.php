@@ -75,6 +75,18 @@ switch ($action) {
         requireLogin();
         addWordsToDecks();
         break;
+    case 'get_decks':
+        requireLogin();
+        getDecks();
+        break;
+    case 'add_word_to_deck':
+        requireLogin();
+        addWordToDeck();
+        break;
+    case 'transfer_deck':
+        requireLogin();
+        transferDeck();
+        break;
     default:
         echo json_encode(["success" => false, "message" => "Action không hợp lệ"]);
 }
@@ -451,23 +463,50 @@ function searchAll() {
  */
 function extractKeywords() {
     global $conn;
-    $data = json_decode(file_get_contents('php://input'), true);
-    $text = trim($data['text'] ?? '');
-    $topK = (int)($data['top_k'] ?? 20);
-    $minLen = (int)($data['min_length'] ?? 3);
-    $domain = trim($data['domain'] ?? '');
-    if ($text === '') { echo json_encode(["success"=>false, "message"=>"Văn bản trống"]); return; }
+
+    try {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if ($data === null) {
+            echo json_encode(["success"=>false, "message"=>"Dữ liệu JSON không hợp lệ"]);
+            return;
+        }
+
+        $text = trim($data['text'] ?? '');
+        $topK = (int)($data['top_k'] ?? 20);
+        $minLen = (int)($data['min_length'] ?? 1);
+        $domain = trim($data['domain'] ?? '');
+
+        if ($text === '') {
+            echo json_encode(["success"=>false, "message"=>"Văn bản trống"]);
+            return;
+        }
 
     // Ensure basic dictionary entries exist
     ensureBasicDictionary();
 
-    // Tokenize english-like words
-    $matches = [];
-    preg_match_all('/[A-Za-z][A-Za-z\-]{'.max(1,$minLen-1).',}/', $text, $matches);
-    $tokens = array_map(function($w){ return strtolower($w); }, $matches[0] ?? []);
-    if (empty($tokens)) { echo json_encode(["success"=>true, "data"=>[]]); return; }
+    // Improved tokenization for English text
+    // Handle contractions and common patterns
+    $text = str_replace(["'ll", "'re", "'ve", "'d", "'s", "n't"], [" will", " are", " have", " would", " is", " not"], $text);
 
-    $stop = [ 'the','and','for','are','but','not','you','with','this','that','from','have','was','were','your','will','would','could','there','their','about','which','when','what','where','who','how','why','into','then','than','its','also','because','been','can','all','more','most','other','some','such','only','each','many','much','very','use','used','using','among','between','within','over','under','after','before','again','new','one','two','three' ];
+    // Extract words using regex - more flexible approach
+    preg_match_all('/\b[A-Za-z]+\b/', $text, $matches);
+    $words = $matches[0];
+
+    $tokens = [];
+    foreach ($words as $word) {
+        $cleanWord = strtolower(trim($word));
+        if (strlen($cleanWord) >= $minLen && ctype_alpha($cleanWord)) {
+            $tokens[] = $cleanWord;
+        }
+    }
+
+    if (empty($tokens)) {
+        echo json_encode(["success"=>true, "data"=>[], "message"=>"Không tìm thấy từ nào trong văn bản"]);
+        return;
+    }
+
+    // Minimal stop words - only remove truly common function words
+    $stop = [ 'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'among', 'this', 'that', 'these', 'those', 'it', 'its', 'itself' ];
     $stopSet = array_flip($stop);
     $freq = [];
     foreach ($tokens as $t) {
@@ -550,7 +589,11 @@ function extractKeywords() {
         }
     }
 
-    echo json_encode([ 'success' => true, 'data' => $suggestions ]);
+        echo json_encode([ 'success' => true, 'data' => $suggestions ]);
+
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
+    }
 }
 
 /**
@@ -655,34 +698,290 @@ function ensureBasicDictionary() {
     $count = $result->fetch_assoc()['count'];
     if ($count > 10) return; // Already has data
 
-    // Add basic words for testing
+    // Add comprehensive English vocabulary for testing
     $basicWords = [
-        ['word' => 'cat', 'vietnamese' => 'mèo', 'english_definition' => 'a small domesticated carnivorous mammal'],
-        ['word' => 'dog', 'vietnamese' => 'chó', 'english_definition' => 'a domesticated carnivorous mammal'],
-        ['word' => 'water', 'vietnamese' => 'nước', 'english_definition' => 'a colorless, transparent, odorless liquid'],
-        ['word' => 'apple', 'vietnamese' => 'táo', 'english_definition' => 'the round fruit of a tree'],
-        ['word' => 'book', 'vietnamese' => 'sách', 'english_definition' => 'a written or printed work'],
-        ['word' => 'house', 'vietnamese' => 'nhà', 'english_definition' => 'a building for human habitation'],
-        ['word' => 'car', 'vietnamese' => 'xe hơi', 'english_definition' => 'a road vehicle with an engine'],
-        ['word' => 'tree', 'vietnamese' => 'cây', 'english_definition' => 'a woody perennial plant'],
-        ['word' => 'sun', 'vietnamese' => 'mặt trời', 'english_definition' => 'the star around which the earth orbits'],
-        ['word' => 'moon', 'vietnamese' => 'mặt trăng', 'english_definition' => 'the natural satellite of the earth'],
-        ['word' => 'good', 'vietnamese' => 'tốt', 'english_definition' => 'to be desired or approved of'],
-        ['word' => 'bad', 'vietnamese' => 'xấu', 'english_definition' => 'of poor quality or low standard'],
-        ['word' => 'big', 'vietnamese' => 'lớn', 'english_definition' => 'of considerable size or extent'],
-        ['word' => 'small', 'vietnamese' => 'nhỏ', 'english_definition' => 'of a size that is less than normal'],
-        ['word' => 'happy', 'vietnamese' => 'vui', 'english_definition' => 'feeling or showing pleasure'],
-        ['word' => 'sad', 'vietnamese' => 'buồn', 'english_definition' => 'feeling or showing sorrow'],
-        ['word' => 'love', 'vietnamese' => 'yêu', 'english_definition' => 'an intense feeling of deep affection'],
-        ['word' => 'time', 'vietnamese' => 'thời gian', 'english_definition' => 'the indefinite continued progress of existence'],
-        ['word' => 'life', 'vietnamese' => 'cuộc sống', 'english_definition' => 'the condition that distinguishes animals and plants'],
-        ['word' => 'work', 'vietnamese' => 'công việc', 'english_definition' => 'activity involving mental or physical effort']
+        // Pronouns & Basic verbs
+        ['word' => 'I', 'vietnamese' => 'tôi', 'english_definition' => 'first person singular pronoun'],
+        ['word' => 'you', 'vietnamese' => 'bạn', 'english_definition' => 'second person pronoun'],
+        ['word' => 'he', 'vietnamese' => 'anh ấy', 'english_definition' => 'third person masculine pronoun'],
+        ['word' => 'she', 'vietnamese' => 'cô ấy', 'english_definition' => 'third person feminine pronoun'],
+        ['word' => 'we', 'vietnamese' => 'chúng tôi', 'english_definition' => 'first person plural pronoun'],
+        ['word' => 'they', 'vietnamese' => 'họ', 'english_definition' => 'third person plural pronoun'],
+        ['word' => 'am', 'vietnamese' => 'là', 'english_definition' => 'first person singular of be'],
+        ['word' => 'is', 'vietnamese' => 'là', 'english_definition' => 'third person singular of be'],
+        ['word' => 'are', 'vietnamese' => 'là', 'english_definition' => 'plural form of be'],
+        ['word' => 'was', 'vietnamese' => 'đã là', 'english_definition' => 'past tense of be'],
+        ['word' => 'were', 'vietnamese' => 'đã là', 'english_definition' => 'past tense plural of be'],
+        ['word' => 'have', 'vietnamese' => 'có', 'english_definition' => 'to possess or own'],
+        ['word' => 'has', 'vietnamese' => 'có', 'english_definition' => 'third person singular of have'],
+        ['word' => 'had', 'vietnamese' => 'đã có', 'english_definition' => 'past tense of have'],
+        ['word' => 'do', 'vietnamese' => 'làm', 'english_definition' => 'to perform an action'],
+        ['word' => 'does', 'vietnamese' => 'làm', 'english_definition' => 'third person singular of do'],
+        ['word' => 'did', 'vietnamese' => 'đã làm', 'english_definition' => 'past tense of do'],
+        ['word' => 'will', 'vietnamese' => 'sẽ', 'english_definition' => 'future tense auxiliary verb'],
+        ['word' => 'would', 'vietnamese' => 'sẽ', 'english_definition' => 'conditional auxiliary verb'],
+        ['word' => 'can', 'vietnamese' => 'có thể', 'english_definition' => 'to be able to'],
+        ['word' => 'could', 'vietnamese' => 'có thể', 'english_definition' => 'past tense of can'],
+        ['word' => 'should', 'vietnamese' => 'nên', 'english_definition' => 'ought to'],
+        ['word' => 'must', 'vietnamese' => 'phải', 'english_definition' => 'to be obliged to'],
+
+        // Common nouns
+        ['word' => 'man', 'vietnamese' => 'người đàn ông', 'english_definition' => 'adult male human'],
+        ['word' => 'woman', 'vietnamese' => 'người phụ nữ', 'english_definition' => 'adult female human'],
+        ['word' => 'child', 'vietnamese' => 'trẻ em', 'english_definition' => 'young human being'],
+        ['word' => 'people', 'vietnamese' => 'mọi người', 'english_definition' => 'human beings in general'],
+        ['word' => 'family', 'vietnamese' => 'gia đình', 'english_definition' => 'group of related people'],
+        ['word' => 'friend', 'vietnamese' => 'bạn bè', 'english_definition' => 'person you like and know well'],
+        ['word' => 'home', 'vietnamese' => 'nhà', 'english_definition' => 'place where you live'],
+        ['word' => 'house', 'vietnamese' => 'ngôi nhà', 'english_definition' => 'building for human habitation'],
+        ['word' => 'school', 'vietnamese' => 'trường học', 'english_definition' => 'institution for education'],
+        ['word' => 'work', 'vietnamese' => 'công việc', 'english_definition' => 'activity involving mental or physical effort'],
+        ['word' => 'job', 'vietnamese' => 'việc làm', 'english_definition' => 'paid position of employment'],
+        ['word' => 'money', 'vietnamese' => 'tiền', 'english_definition' => 'medium of exchange'],
+        ['word' => 'food', 'vietnamese' => 'thức ăn', 'english_definition' => 'nutritious substance consumed'],
+        ['word' => 'water', 'vietnamese' => 'nước', 'english_definition' => 'colorless liquid essential for life'],
+        ['word' => 'car', 'vietnamese' => 'xe hơi', 'english_definition' => 'road vehicle with engine'],
+        ['word' => 'book', 'vietnamese' => 'sách', 'english_definition' => 'written or printed work'],
+        ['word' => 'phone', 'vietnamese' => 'điện thoại', 'english_definition' => 'device for communication'],
+        ['word' => 'computer', 'vietnamese' => 'máy tính', 'english_definition' => 'electronic device for processing data'],
+
+        // Common adjectives
+        ['word' => 'good', 'vietnamese' => 'tốt', 'english_definition' => 'of high quality'],
+        ['word' => 'bad', 'vietnamese' => 'xấu', 'english_definition' => 'of poor quality'],
+        ['word' => 'big', 'vietnamese' => 'lớn', 'english_definition' => 'of considerable size'],
+        ['word' => 'small', 'vietnamese' => 'nhỏ', 'english_definition' => 'of limited size'],
+        ['word' => 'new', 'vietnamese' => 'mới', 'english_definition' => 'recently made or created'],
+        ['word' => 'old', 'vietnamese' => 'cũ', 'english_definition' => 'having existed for a long time'],
+        ['word' => 'young', 'vietnamese' => 'trẻ', 'english_definition' => 'having lived for a short time'],
+        ['word' => 'beautiful', 'vietnamese' => 'đẹp', 'english_definition' => 'pleasing to look at'],
+        ['word' => 'happy', 'vietnamese' => 'vui', 'english_definition' => 'feeling pleasure'],
+        ['word' => 'sad', 'vietnamese' => 'buồn', 'english_definition' => 'feeling sorrow'],
+        ['word' => 'easy', 'vietnamese' => 'dễ', 'english_definition' => 'not difficult'],
+        ['word' => 'hard', 'vietnamese' => 'khó', 'english_definition' => 'difficult to do'],
+        ['word' => 'fast', 'vietnamese' => 'nhanh', 'english_definition' => 'moving quickly'],
+        ['word' => 'slow', 'vietnamese' => 'chậm', 'english_definition' => 'moving at low speed'],
+
+        // Common verbs
+        ['word' => 'go', 'vietnamese' => 'đi', 'english_definition' => 'to move from one place to another'],
+        ['word' => 'come', 'vietnamese' => 'đến', 'english_definition' => 'to move toward'],
+        ['word' => 'see', 'vietnamese' => 'nhìn', 'english_definition' => 'to perceive with eyes'],
+        ['word' => 'look', 'vietnamese' => 'nhìn', 'english_definition' => 'to direct eyes toward'],
+        ['word' => 'hear', 'vietnamese' => 'nghe', 'english_definition' => 'to perceive sound'],
+        ['word' => 'listen', 'vietnamese' => 'lắng nghe', 'english_definition' => 'to pay attention to sound'],
+        ['word' => 'speak', 'vietnamese' => 'nói', 'english_definition' => 'to say words'],
+        ['word' => 'talk', 'vietnamese' => 'nói chuyện', 'english_definition' => 'to communicate verbally'],
+        ['word' => 'read', 'vietnamese' => 'đọc', 'english_definition' => 'to look at and understand text'],
+        ['word' => 'write', 'vietnamese' => 'viết', 'english_definition' => 'to mark letters or words'],
+        ['word' => 'eat', 'vietnamese' => 'ăn', 'english_definition' => 'to consume food'],
+        ['word' => 'drink', 'vietnamese' => 'uống', 'english_definition' => 'to consume liquid'],
+        ['word' => 'sleep', 'vietnamese' => 'ngủ', 'english_definition' => 'to rest with eyes closed'],
+        ['word' => 'walk', 'vietnamese' => 'đi bộ', 'english_definition' => 'to move on foot'],
+        ['word' => 'run', 'vietnamese' => 'chạy', 'english_definition' => 'to move quickly on foot'],
+        ['word' => 'play', 'vietnamese' => 'chơi', 'english_definition' => 'to engage in activity for enjoyment'],
+        ['word' => 'study', 'vietnamese' => 'học', 'english_definition' => 'to learn about something'],
+        ['word' => 'learn', 'vietnamese' => 'học', 'english_definition' => 'to acquire knowledge'],
+        ['word' => 'teach', 'vietnamese' => 'dạy', 'english_definition' => 'to give knowledge to others'],
+        ['word' => 'help', 'vietnamese' => 'giúp đỡ', 'english_definition' => 'to assist someone'],
+        ['word' => 'love', 'vietnamese' => 'yêu', 'english_definition' => 'to feel deep affection'],
+        ['word' => 'like', 'vietnamese' => 'thích', 'english_definition' => 'to find agreeable'],
+        ['word' => 'want', 'vietnamese' => 'muốn', 'english_definition' => 'to desire'],
+        ['word' => 'need', 'vietnamese' => 'cần', 'english_definition' => 'to require'],
+        ['word' => 'know', 'vietnamese' => 'biết', 'english_definition' => 'to be aware of'],
+        ['word' => 'think', 'vietnamese' => 'nghĩ', 'english_definition' => 'to use mind to consider'],
+        ['word' => 'feel', 'vietnamese' => 'cảm thấy', 'english_definition' => 'to experience emotion'],
+        ['word' => 'make', 'vietnamese' => 'làm', 'english_definition' => 'to create or produce'],
+        ['word' => 'take', 'vietnamese' => 'lấy', 'english_definition' => 'to get hold of'],
+        ['word' => 'give', 'vietnamese' => 'cho', 'english_definition' => 'to provide'],
+        ['word' => 'get', 'vietnamese' => 'lấy', 'english_definition' => 'to obtain'],
+        ['word' => 'put', 'vietnamese' => 'đặt', 'english_definition' => 'to place'],
+        ['word' => 'find', 'vietnamese' => 'tìm', 'english_definition' => 'to discover'],
+        ['word' => 'buy', 'vietnamese' => 'mua', 'english_definition' => 'to purchase'],
+        ['word' => 'sell', 'vietnamese' => 'bán', 'english_definition' => 'to exchange for money'],
+
+        // Time & Numbers
+        ['word' => 'time', 'vietnamese' => 'thời gian', 'english_definition' => 'indefinite continued progress of existence'],
+        ['word' => 'day', 'vietnamese' => 'ngày', 'english_definition' => 'period of 24 hours'],
+        ['word' => 'night', 'vietnamese' => 'đêm', 'english_definition' => 'time of darkness'],
+        ['word' => 'week', 'vietnamese' => 'tuần', 'english_definition' => 'period of seven days'],
+        ['word' => 'month', 'vietnamese' => 'tháng', 'english_definition' => 'period of about 30 days'],
+        ['word' => 'year', 'vietnamese' => 'năm', 'english_definition' => 'period of 365 days'],
+        ['word' => 'today', 'vietnamese' => 'hôm nay', 'english_definition' => 'this present day'],
+        ['word' => 'tomorrow', 'vietnamese' => 'ngày mai', 'english_definition' => 'the day after today'],
+        ['word' => 'yesterday', 'vietnamese' => 'hôm qua', 'english_definition' => 'the day before today'],
+        ['word' => 'morning', 'vietnamese' => 'buổi sáng', 'english_definition' => 'early part of day'],
+        ['word' => 'afternoon', 'vietnamese' => 'buổi chiều', 'english_definition' => 'middle part of day'],
+        ['word' => 'evening', 'vietnamese' => 'buổi tối', 'english_definition' => 'end part of day'],
+        ['word' => 'one', 'vietnamese' => 'một', 'english_definition' => 'number 1'],
+        ['word' => 'two', 'vietnamese' => 'hai', 'english_definition' => 'number 2'],
+        ['word' => 'three', 'vietnamese' => 'ba', 'english_definition' => 'number 3'],
+        ['word' => 'four', 'vietnamese' => 'bốn', 'english_definition' => 'number 4'],
+        ['word' => 'five', 'vietnamese' => 'năm', 'english_definition' => 'number 5'],
+        ['word' => 'ten', 'vietnamese' => 'mười', 'english_definition' => 'number 10'],
+        ['word' => 'hundred', 'vietnamese' => 'trăm', 'english_definition' => 'number 100'],
+
+        // Colors
+        ['word' => 'red', 'vietnamese' => 'đỏ', 'english_definition' => 'color of blood'],
+        ['word' => 'blue', 'vietnamese' => 'xanh dương', 'english_definition' => 'color of sky'],
+        ['word' => 'green', 'vietnamese' => 'xanh lá', 'english_definition' => 'color of grass'],
+        ['word' => 'yellow', 'vietnamese' => 'vàng', 'english_definition' => 'color of sun'],
+        ['word' => 'black', 'vietnamese' => 'đen', 'english_definition' => 'darkest color'],
+        ['word' => 'white', 'vietnamese' => 'trắng', 'english_definition' => 'lightest color'],
+
+        // Animals
+        ['word' => 'cat', 'vietnamese' => 'mèo', 'english_definition' => 'small domesticated carnivorous mammal'],
+        ['word' => 'dog', 'vietnamese' => 'chó', 'english_definition' => 'domesticated carnivorous mammal'],
+        ['word' => 'bird', 'vietnamese' => 'chim', 'english_definition' => 'feathered flying animal'],
+        ['word' => 'fish', 'vietnamese' => 'cá', 'english_definition' => 'aquatic animal'],
+
+        // Food
+        ['word' => 'apple', 'vietnamese' => 'táo', 'english_definition' => 'round fruit of tree'],
+        ['word' => 'banana', 'vietnamese' => 'chuối', 'english_definition' => 'yellow curved fruit'],
+        ['word' => 'orange', 'vietnamese' => 'cam', 'english_definition' => 'citrus fruit'],
+        ['word' => 'rice', 'vietnamese' => 'cơm', 'english_definition' => 'staple food grain'],
+        ['word' => 'bread', 'vietnamese' => 'bánh mì', 'english_definition' => 'baked food made from flour'],
+        ['word' => 'milk', 'vietnamese' => 'sữa', 'english_definition' => 'white liquid from mammals'],
+        ['word' => 'coffee', 'vietnamese' => 'cà phê', 'english_definition' => 'drink made from coffee beans'],
+        ['word' => 'tea', 'vietnamese' => 'trà', 'english_definition' => 'drink made from tea leaves'],
+
+        // Nature
+        ['word' => 'sun', 'vietnamese' => 'mặt trời', 'english_definition' => 'star that earth orbits'],
+        ['word' => 'moon', 'vietnamese' => 'mặt trăng', 'english_definition' => 'natural satellite of earth'],
+        ['word' => 'star', 'vietnamese' => 'ngôi sao', 'english_definition' => 'luminous celestial body'],
+        ['word' => 'tree', 'vietnamese' => 'cây', 'english_definition' => 'woody perennial plant'],
+        ['word' => 'flower', 'vietnamese' => 'hoa', 'english_definition' => 'reproductive structure of plant'],
+        ['word' => 'grass', 'vietnamese' => 'cỏ', 'english_definition' => 'small green plants'],
+        ['word' => 'mountain', 'vietnamese' => 'núi', 'english_definition' => 'large natural elevation'],
+        ['word' => 'river', 'vietnamese' => 'sông', 'english_definition' => 'flowing body of water'],
+        ['word' => 'sea', 'vietnamese' => 'biển', 'english_definition' => 'large body of salt water'],
+        ['word' => 'sky', 'vietnamese' => 'bầu trời', 'english_definition' => 'space above earth'],
+        ['word' => 'cloud', 'vietnamese' => 'đám mây', 'english_definition' => 'visible mass of water vapor'],
+        ['word' => 'rain', 'vietnamese' => 'mưa', 'english_definition' => 'water falling from clouds'],
+        ['word' => 'wind', 'vietnamese' => 'gió', 'english_definition' => 'moving air'],
+
+        // Common names (examples)
+        ['word' => 'Long', 'vietnamese' => 'Long (tên)', 'english_definition' => 'Vietnamese given name'],
+        ['word' => 'John', 'vietnamese' => 'John (tên)', 'english_definition' => 'English given name'],
+        ['word' => 'Mary', 'vietnamese' => 'Mary (tên)', 'english_definition' => 'English given name']
     ];
 
     $stmt = $conn->prepare("INSERT IGNORE INTO dictionary (word, vietnamese, english_definition, part_of_speech, difficulty) VALUES (?, ?, ?, 'noun', 'beginner')");
     foreach ($basicWords as $word) {
         $stmt->bind_param("sss", $word['word'], $word['vietnamese'], $word['english_definition']);
         $stmt->execute();
+    }
+}
+
+function getDecks() {
+    global $conn;
+
+    // User login is already checked by requireLogin() before this function
+    $userId = $_SESSION['user_id'];
+
+    try {
+        // Debug: Check what user_id we're using
+        error_log("getDecks: Looking for decks for user_id = " . $userId);
+
+        $stmt = $conn->prepare("SELECT id, name, description FROM flashcard_decks WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $decks = [];
+        while ($row = $result->fetch_assoc()) {
+            $decks[] = $row;
+        }
+
+        // Debug: Log the number of decks found
+        error_log("getDecks: Found " . count($decks) . " decks for user " . $userId);
+
+        // If no decks found, let's check if there are any decks at all
+        if (count($decks) === 0) {
+            $allDecksResult = $conn->query("SELECT COUNT(*) as total, GROUP_CONCAT(DISTINCT user_id) as user_ids FROM flashcard_decks");
+            if ($allDecksResult) {
+                $allDecksRow = $allDecksResult->fetch_assoc();
+                error_log("getDecks: Total decks in system: " . $allDecksRow['total'] . ", User IDs: " . $allDecksRow['user_ids']);
+            }
+        }
+
+        echo json_encode(["success" => true, "data" => $decks, "debug_user_id" => $userId]);
+    } catch (Exception $e) {
+        error_log("getDecks error: " . $e->getMessage());
+        echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
+    }
+}
+
+function addWordToDeck() {
+    global $conn;
+    $userId = $_SESSION['user_id'];
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    $deckId = (int)($data['deck_id'] ?? 0);
+    $word = trim($data['word'] ?? '');
+    $definition = trim($data['definition'] ?? '');
+    $example = trim($data['example'] ?? '');
+
+    if ($deckId <= 0 || $word === '') {
+        echo json_encode(["success" => false, "message" => "Dữ liệu không hợp lệ"]);
+        return;
+    }
+
+    try {
+        // Verify deck belongs to user
+        $stmt = $conn->prepare("SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $deckId, $userId);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows === 0) {
+            echo json_encode(["success" => false, "message" => "Bộ thẻ không tồn tại"]);
+            return;
+        }
+
+        // Check if word already exists in deck
+        $stmt = $conn->prepare("SELECT id FROM flashcards WHERE deck_id = ? AND front = ?");
+        $stmt->bind_param("is", $deckId, $word);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            echo json_encode(["success" => false, "message" => "Từ này đã có trong bộ thẻ"]);
+            return;
+        }
+
+        // Add word to deck
+        $stmt = $conn->prepare("INSERT INTO flashcards (deck_id, front, back, example) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("isss", $deckId, $word, $definition, $example);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Đã thêm từ vào bộ thẻ"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Không thể thêm từ vào bộ thẻ"]);
+        }
+
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
+    }
+}
+
+function transferDeck() {
+    global $conn;
+    $userId = $_SESSION['user_id'];
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    $deckId = (int)($data['deck_id'] ?? 0);
+
+    if ($deckId <= 0) {
+        echo json_encode(["success" => false, "message" => "Deck ID không hợp lệ"]);
+        return;
+    }
+
+    try {
+        $stmt = $conn->prepare("UPDATE flashcard_decks SET user_id = ? WHERE id = ?");
+        $stmt->bind_param("ii", $userId, $deckId);
+
+        if ($stmt->execute() && $stmt->affected_rows > 0) {
+            echo json_encode(["success" => true, "message" => "Đã chuyển bộ thẻ thành công"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Không thể chuyển bộ thẻ"]);
+        }
+    } catch (Exception $e) {
+        echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()]);
     }
 }
 

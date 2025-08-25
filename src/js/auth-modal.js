@@ -169,7 +169,16 @@ function closeAuthModal() {
 
 // Chuyển đến trang đăng nhập
 function goToLogin() {
-    window.location.href = 'index.php';
+    closeAuthModal();
+    // Nếu đang ở trang index.php, mở modal đăng nhập
+    if (window.location.pathname.includes('index.php') || window.location.pathname === '/') {
+        if (typeof openModal === 'function') {
+            openModal('login');
+        }
+    } else {
+        // Nếu ở trang khác, redirect về index.php
+        window.location.href = 'index.php';
+    }
 }
 
 // Kiểm tra đăng nhập và hiển thị modal nếu cần
