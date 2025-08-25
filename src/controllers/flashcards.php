@@ -106,8 +106,8 @@ function createDeck() {
     $visibility = in_array(($data['visibility'] ?? 'private'), ['private','public']) ? $data['visibility'] : 'private';
     if ($name === '') { echo json_encode(["success" => false, "message" => "Tên bộ thẻ không được trống"]); return; }
 
-    $stmt = $conn->prepare("INSERT INTO decks (user_id, name, description, visibility) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("isss", $_SESSION['user_id'], $name, $description, $visibility);
+    $stmt = $conn->prepare("INSERT INTO flashcard_decks (user_id, name, description) VALUES (?, ?, ?)");
+    $stmt->bind_param("iss", $_SESSION['user_id'], $name, $description);
     if ($stmt->execute()) {
         echo json_encode(["success" => true, "message" => "Tạo bộ thẻ thành công", "deck_id" => $conn->insert_id]);
     } else {
@@ -118,12 +118,29 @@ function createDeck() {
 
 function listDecks() {
     global $conn;
-    $stmt = $conn->prepare("SELECT id, name, description, visibility, created_at FROM decks WHERE user_id = ? ORDER BY created_at DESC");
-    $stmt->bind_param("i", $_SESSION['user_id']);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $decks = $res->fetch_all(MYSQLI_ASSOC);
-    echo json_encode(["success" => true, "data" => $decks]);
+
+    try {
+        $stmt = $conn->prepare("SELECT id, name, description, created_at FROM flashcard_decks WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->bind_param("i", $_SESSION['user_id']);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $decks = $res->fetch_all(MYSQLI_ASSOC);
+
+        // Add card count for each deck
+        foreach ($decks as &$deck) {
+            $countStmt = $conn->prepare("SELECT COUNT(*) as card_count FROM flashcards WHERE deck_id = ?");
+            $countStmt->bind_param("i", $deck['id']);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $deck['card_count'] = $countResult->fetch_assoc()['card_count'];
+            $countStmt->close();
+        }
+
+        echo json_encode(["success" => true, "data" => $decks]);
+    } catch (Exception $e) {
+        error_log("listDecks error: " . $e->getMessage());
+        echo json_encode(["success" => false, "message" => "Lỗi khi tải danh sách bộ thẻ: " . $e->getMessage()]);
+    }
 }
 
 function updateDeck() {
@@ -136,13 +153,13 @@ function updateDeck() {
     if ($deckId <= 0) { echo json_encode(["success" => false, "message" => "Deck không hợp lệ"]); return; }
 
     // Ensure ownership
-    $own = $conn->prepare("SELECT id FROM decks WHERE id = ? AND user_id = ?");
+    $own = $conn->prepare("SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?");
     $own->bind_param("ii", $deckId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
 
-    $stmt = $conn->prepare("UPDATE decks SET name = ?, description = ?, visibility = ? WHERE id = ?");
-    $stmt->bind_param("sssi", $name, $description, $visibility, $deckId);
+    $stmt = $conn->prepare("UPDATE flashcard_decks SET name = ?, description = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $name, $description, $deckId);
     $ok = $stmt->execute();
     echo json_encode(["success" => $ok, "message" => $ok ? "Cập nhật thành công" : "Cập nhật thất bại"]);
 }
@@ -153,7 +170,7 @@ function deleteDeck() {
     $deckId = (int)($data['deck_id'] ?? 0);
     if ($deckId <= 0) { echo json_encode(["success" => false, "message" => "Deck không hợp lệ"]); return; }
 
-    $stmt = $conn->prepare("DELETE FROM decks WHERE id = ? AND user_id = ?");
+    $stmt = $conn->prepare("DELETE FROM flashcard_decks WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $deckId, $_SESSION['user_id']);
     $ok = $stmt->execute();
     echo json_encode(["success" => $ok, "message" => $ok ? "Đã xóa bộ thẻ" : "Không thể xóa"]);
@@ -172,7 +189,7 @@ function createFlashcard() {
     if ($deckId <= 0 || $word === '' || $definition === '') { echo json_encode(["success" => false, "message" => "Thiếu thông tin thẻ"]); return; }
 
     // Ownership check
-    $own = $conn->prepare("SELECT id FROM decks WHERE id = ? AND user_id = ?");
+    $own = $conn->prepare("SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?");
     $own->bind_param("ii", $deckId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
@@ -193,7 +210,7 @@ function listFlashcards() {
     if ($deckId <= 0) { echo json_encode(["success" => false, "message" => "Deck không hợp lệ"]); return; }
 
     // Ownership check
-    $own = $conn->prepare("SELECT id FROM decks WHERE id = ? AND user_id = ?");
+    $own = $conn->prepare("SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?");
     $own->bind_param("ii", $deckId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
@@ -217,7 +234,7 @@ function updateFlashcard() {
     if ($flashcardId <= 0) { echo json_encode(["success" => false, "message" => "Thẻ không hợp lệ"]); return; }
 
     // Ownership check via deck
-    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
+    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN flashcard_decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
     $own->bind_param("ii", $flashcardId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
@@ -235,7 +252,7 @@ function deleteFlashcard() {
     if ($flashcardId <= 0) { echo json_encode(["success" => false, "message" => "Thẻ không hợp lệ"]); return; }
 
     // Ownership check via deck
-    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
+    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN flashcard_decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
     $own->bind_param("ii", $flashcardId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
@@ -253,7 +270,7 @@ function getStudyQueue() {
     if ($deckId <= 0) { echo json_encode(["success" => false, "message" => "Deck không hợp lệ"]); return; }
 
     // Ownership check
-    $own = $conn->prepare("SELECT id FROM decks WHERE id = ? AND user_id = ?");
+    $own = $conn->prepare("SELECT id FROM flashcard_decks WHERE id = ? AND user_id = ?");
     $own->bind_param("ii", $deckId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
@@ -282,7 +299,7 @@ function submitReview() {
     if ($flashcardId <= 0) { echo json_encode(["success" => false, "message" => "Thẻ không hợp lệ"]); return; }
 
     // Ownership via deck
-    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
+    $own = $conn->prepare("SELECT d.user_id FROM flashcards f JOIN flashcard_decks d ON f.deck_id = d.id WHERE f.id = ? AND d.user_id = ?");
     $own->bind_param("ii", $flashcardId, $_SESSION['user_id']);
     $own->execute();
     if ($own->get_result()->num_rows === 0) { echo json_encode(["success" => false, "message" => "Không có quyền"]); return; }
