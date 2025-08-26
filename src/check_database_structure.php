@@ -55,10 +55,10 @@ try {
     echo "<p style='color: red;'>❌ Error: " . $e->getMessage() . "</p>";
 }
 
-// Check flashcard_decks table and show all decks
+// Check decks table and show all decks
 echo "<h3>2. All Flashcard Decks in System:</h3>";
 try {
-    $result = $conn->query("SELECT id, user_id, name, description, created_at FROM flashcard_decks ORDER BY created_at DESC");
+    $result = $conn->query("SELECT id, user_id, name, description, created_at FROM decks ORDER BY created_at DESC");
     if ($result && $result->num_rows > 0) {
         echo "<table border='1' style='border-collapse: collapse; width: 100%;'>";
         echo "<tr><th>ID</th><th>User ID</th><th>Name</th><th>Description</th><th>Created At</th></tr>";

@@ -2,7 +2,7 @@
 -- CREATE FLASHCARD SYSTEM TABLES
 -- =====================================================
 -- This script creates all necessary tables for the flashcard system
-
+USE eduapp;
 -- Create users table if not exists
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

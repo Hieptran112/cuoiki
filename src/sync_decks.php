@@ -13,14 +13,14 @@ $userId = $_SESSION['user_id'];
 
 try {
     // Get all decks in system
-    $result = $conn->query("SELECT id, user_id, name, description FROM flashcard_decks ORDER BY created_at DESC");
+    $result = $conn->query("SELECT id, user_id, name, description FROM decks ORDER BY created_at DESC");
     $allDecks = [];
     while ($row = $result->fetch_assoc()) {
         $allDecks[] = $row;
     }
-    
+
     // Get current user's decks
-    $stmt = $conn->prepare("SELECT id, name FROM flashcard_decks WHERE user_id = ?");
+    $stmt = $conn->prepare("SELECT id, name FROM decks WHERE user_id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -54,7 +54,7 @@ try {
         // Option 1: Transfer all existing decks to current user
         if (count($allDecks) > 0) {
             echo "\nOption 1: Transfer all existing decks to your account\n";
-            $conn->query("UPDATE flashcard_decks SET user_id = $userId");
+            $conn->query("UPDATE decks SET user_id = $userId");
             $affected = $conn->affected_rows;
             echo "✅ Transferred $affected decks to your account\n";
         }
@@ -85,16 +85,16 @@ try {
     }
     
     // Final check
-    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM flashcard_decks WHERE user_id = ?");
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM decks WHERE user_id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
     $finalCount = $result->fetch_assoc()['count'];
-    
+
     echo "\n🎉 Final result: You now have $finalCount decks\n";
-    
+
     // List final decks
-    $stmt = $conn->prepare("SELECT name FROM flashcard_decks WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT name FROM decks WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();

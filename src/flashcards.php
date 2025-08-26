@@ -533,6 +533,104 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 align-items: flex-start;
             }
         }
+
+        /* Study Interface Styles */
+        .study-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .study-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .study-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .study-card-content {
+            padding: 2rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .study-card.flipped {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .study-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .study-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .study-btn-again {
+            background: #f44336;
+            color: white;
+        }
+
+        .study-btn-hard {
+            background: #ff9800;
+            color: white;
+        }
+
+        .study-btn-good {
+            background: #4caf50;
+            color: white;
+        }
+
+        .study-btn-easy {
+            background: #2196f3;
+            color: white;
+        }
+
+        .study-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .study-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .study-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -709,6 +807,32 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <p style="color: #666; margin-bottom: 1rem;">Không tìm thấy trong bộ thẻ? Tìm kiếm trong từ điển và thêm vào bộ thẻ:</p>
                         <div id="dictionary-search-results">
                             <!-- Dictionary search results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Interface -->
+                <div class="results-container" id="study-interface" style="display:none;">
+                    <h4 id="study-title">Học thẻ</h4>
+                    <div class="study-container">
+                        <div id="study-card" class="study-card" onclick="flipCard()">
+                            <div class="study-card-content">
+                                <div style="color: #666;"><i class="fas fa-info-circle"></i><br>Chọn bộ thẻ để bắt đầu học.</div>
+                            </div>
+                        </div>
+                        <div class="study-controls" id="study-controls" style="display:none;">
+                            <button class="study-btn study-btn-again" onclick="rateCard('again')">
+                                <i class="fas fa-times"></i> Khó
+                            </button>
+                            <button class="study-btn study-btn-hard" onclick="rateCard('hard')">
+                                <i class="fas fa-minus"></i> Trung bình
+                            </button>
+                            <button class="study-btn study-btn-good" onclick="rateCard('good')">
+                                <i class="fas fa-check"></i> Tốt
+                            </button>
+                            <button class="study-btn study-btn-easy" onclick="rateCard('easy')">
+                                <i class="fas fa-star"></i> Dễ
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1023,7 +1147,8 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             selectedDeckId = id;
             document.getElementById('deck-title').textContent = `Quản lý thẻ - ${name}`;
             document.getElementById('deck-detail').style.display = 'block';
-            document.getElementById('study-panel').style.display = 'block';
+            document.getElementById('study-interface').style.display = 'block';
+            document.getElementById('study-title').textContent = `Học thẻ - ${name}`;
 
             // Update deck card selection
             document.querySelectorAll('.deck-card').forEach(card => {
@@ -1177,9 +1302,11 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         function renderStudyCard() {
             const el = document.getElementById('study-card');
             const content = el.querySelector('.study-card-content');
+            const controls = document.getElementById('study-controls');
 
             if (!studyQueue.length) {
                 content.innerHTML = '<div style="color: #666;"><i class="fas fa-info-circle"></i><br>Không còn thẻ để học.</div>';
+                controls.style.display = 'none';
                 return;
             }
 
@@ -1193,6 +1320,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     ${cur.example ? `<div style="margin-top: 1rem; font-size: 0.9rem; font-style: italic; opacity: 0.9;">Ví dụ: ${cur.example}</div>` : ''}
                     <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.7;">${progress}</div>
                 `;
+                controls.style.display = 'flex';
             } else {
                 content.innerHTML = `
                     <div style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Từ vựng</div>
@@ -1200,6 +1328,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     <div style="font-size: 0.9rem; opacity: 0.7;">Nhấn để xem định nghĩa</div>
                     <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.7;">${progress}</div>
                 `;
+                controls.style.display = 'none';
             }
         }
 

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navbar Comparison - Before vs After</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 2rem;
+        }
+
+        .comparison-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .comparison-title {
+            text-align: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .navbar-demo {
+            margin-bottom: 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .demo-label {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* Updated Navbar Style (matches flashcards.php) */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            opacity: 0.8;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Old Navbar Style (for comparison) */
+        .header-old {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .header-old .logo {
+            color: #667eea;
+        }
+
+        .header-old .nav-menu a {
+            color: #333;
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+        }
+
+        .header-old .nav-menu a:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            opacity: 1;
+        }
+
+        .header-old .user-info {
+            color: #333;
+        }
+
+        .header-old .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .changes-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .changes-list h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .changes-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .changes-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .changes-list li:last-child {
+            border-bottom: none;
+        }
+
+        .change-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .check-icon {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="comparison-container">
+        <h1 class="comparison-title">🎨 Navbar Style Comparison</h1>
+        
+        <!-- NEW STYLE (matches flashcards.php) -->
+        <div class="navbar-demo">
+            <div class="demo-label">✅ NEW STYLE (index.php - matches flashcards.php)</div>
+            <header class="header">
+                <div class="header-content">
+                    <a href="index.php" class="logo">
+                        <i class="fas fa-book-open"></i> SmartDictionary
+                    </a>
+                    <nav>
+                        <ul class="nav-menu">
+                            <li><a href="index.php">Trang chủ</a></li>
+                            <li><a href="topics.php">Chủ đề</a></li>
+                            <li><a href="flashcards.php">Flashcards</a></li>
+                            <li><a href="listening.php">Nghe</a></li>
+                            <li><a href="stats.php">Thống kê</a></li>
+                        </ul>
+                    </nav>
+                    <div class="user-info">
+                        <span>Xin chào, Long</span>
+                        <a href="profile.php" class="btn btn-primary">Hồ sơ</a>
+                        <a href="controllers/logout.php" class="btn btn-secondary">Đăng xuất</a>
+                    </div>
+                </div>
+            </header>
+        </div>
+
+        <!-- OLD STYLE (for comparison) -->
+        <div class="navbar-demo">
+            <div class="demo-label">❌ OLD STYLE (before changes)</div>
+            <header class="header-old">
+                <div class="header-content">
+                    <a href="index.php" class="logo">
+                        <i class="fas fa-book-open"></i> SmartDictionary
+                    </a>
+                    <nav>
+                        <ul class="nav-menu">
+                            <li><a href="index.php">Trang chủ</a></li>
+                            <li><a href="topics.php">Chủ đề</a></li>
+                            <li><a href="flashcards.php">Flashcards</a></li>
+                            <li><a href="listening.php">Nghe</a></li>
+                            <li><a href="stats.php">Thống kê</a></li>
+                        </ul>
+                    </nav>
+                    <div class="user-info">
+                        <span>Xin chào, Long</span>
+                        <a href="profile.php" class="btn btn-primary">Hồ sơ</a>
+                        <a href="controllers/logout.php" class="btn btn-secondary">Đăng xuất</a>
+                    </div>
+                </div>
+            </header>
+        </div>
+
+        <!-- CHANGES SUMMARY -->
+        <div class="changes-list">
+            <h3>🔧 Changes Made to Match flashcards.php Style:</h3>
+            <ul>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Header Background:</strong> Changed from white (rgba(255,255,255,0.95)) to transparent purple (rgba(255,255,255,0.1))
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Logo Color:</strong> Changed from purple (#667eea) to white
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Logo Size:</strong> Reduced from 1.8rem to 1.5rem to match flashcards.php
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Navigation Links:</strong> Changed from dark (#333) to white color
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Navigation Gap:</strong> Increased from 1.5rem to 2rem for better spacing
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Hover Effect:</strong> Changed from color change to opacity (0.8) for consistency
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>User Info Text:</strong> Changed to white color
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Secondary Button:</strong> Changed to transparent white style with border
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Button Padding:</strong> Adjusted from 0.5rem 1.5rem to 0.5rem 1rem
+                    </div>
+                </li>
+                <li>
+                    <div class="change-item">
+                        <i class="fas fa-check check-icon"></i>
+                        <strong>Header Class:</strong> Added "header" class to match flashcards.php structure
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

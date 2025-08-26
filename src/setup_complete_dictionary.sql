@@ -5,7 +5,7 @@
 -- for the text extraction feature in the flashcards system
 
 -- Create all necessary tables for the flashcard system
-
+USE eduapp;
 -- Create users table if not exists
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

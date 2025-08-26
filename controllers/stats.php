@@ -3,7 +3,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 header('Content-Type: application/json');
-require_once __DIR__ . '/../services/database.php';
+require_once __DIR__ . '/../src/services/database.php';
 
 // Auto-login for testing
 if (!isset($_SESSION['user_id'])) {

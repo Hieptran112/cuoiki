@@ -3,7 +3,7 @@
 -- =====================================================
 -- This script adds comprehensive English vocabulary to support text extraction feature
 -- Run this script to populate the dictionary table with common English words
-
+USE eduapp;
 -- Create dictionary table if not exists
 CREATE TABLE IF NOT EXISTS dictionary (
     id INT AUTO_INCREMENT PRIMARY KEY,

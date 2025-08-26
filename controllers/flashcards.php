@@ -1,7 +1,7 @@
 <?php
 session_start();
 header('Content-Type: application/json');
-require_once __DIR__ . '/../services/database.php';
+require_once __DIR__ . '/../src/services/database.php';
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);

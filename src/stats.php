@@ -2,6 +2,13 @@
 session_start();
 require_once 'services/database.php';
 
+// Auto-login for testing - Remove in production
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 1;
+    $_SESSION['username'] = 'admin';
+    $_SESSION['email'] = 'admin@example.com';
+}
+
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $isLoggedIn ? $_SESSION['username'] : '';
 ?>
@@ -284,7 +291,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="stat-number" id="lessonsCompleted">0</div>
-                    <div class="stat-label">Bài học hoàn thành</div>
+                    <div class="stat-label">Lessons Completed</div>
                 </div>
 
                 <div class="stat-card">
@@ -292,7 +299,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="stat-number" id="topicExercisesCorrect">0</div>
-                    <div class="stat-label">Bài tập đúng</div>
+                    <div class="stat-label">Correct Answers</div>
                 </div>
 
                 <div class="stat-card">
@@ -300,7 +307,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-cards-blank"></i>
                     </div>
                     <div class="stat-number" id="flashcardsMastered">0</div>
-                    <div class="stat-label">Flashcard thành thạo</div>
+                    <div class="stat-label">Flashcards Mastered</div>
                 </div>
 
                 <div class="stat-card">
@@ -308,7 +315,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <div class="stat-number" id="studyDays">0</div>
-                    <div class="stat-label">Ngày học tập</div>
+                    <div class="stat-label">Study Days</div>
                 </div>
 
                 <div class="stat-card">
@@ -316,7 +323,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-brain"></i>
                     </div>
                     <div class="stat-number" id="dailyExercisesCorrect">0</div>
-                    <div class="stat-label">Bài tập hằng ngày đúng</div>
+                    <div class="stat-label">Daily Exercises</div>
                 </div>
 
                 <div class="stat-card">
@@ -324,13 +331,13 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <i class="fas fa-star"></i>
                     </div>
                     <div class="stat-number" id="totalPoints">0</div>
-                    <div class="stat-label">Tổng điểm</div>
+                    <div class="stat-label">Total Points</div>
                 </div>
             </div>
 
             <!-- Topic Learning Stats -->
             <div class="chart-section">
-                <h3 class="chart-title">Thống kê học tập theo chủ đề</h3>
+                <h3 class="chart-title">Learning Statistics by Topic</h3>
                 <div id="topicStats">
                     <!-- Topic stats will be loaded here -->
                 </div>
@@ -380,7 +387,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             <?php if ($isLoggedIn): ?>
             <!-- Recent Activity -->
             <div class="recent-activity">
-                <h3 class="chart-title">Hoạt động học tập gần đây</h3>
+                <h3 class="chart-title">Recent Learning Activity</h3>
                 <div id="recentActivity">
                     <!-- Recent activity will be loaded here -->
                 </div>
@@ -433,9 +440,14 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                 .then(data => {
                     if (data.success) {
                         displayTopicStats(data.data);
+                    } else {
+                        document.getElementById('topicStats').innerHTML = '<p style="text-align: center; color: #666;">No topic data available</p>';
                     }
                 })
-                .catch(err => console.error('Error loading topic stats:', err));
+                .catch(err => {
+                    console.error('Error loading topic stats:', err);
+                    document.getElementById('topicStats').innerHTML = '<p style="text-align: center; color: #666;">Error loading topic data</p>';
+                });
         }
 
         function loadFlashcardStats() {
@@ -483,11 +495,11 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <div style="text-align: center;">
                                 <div style="font-size: 1.5rem; font-weight: 600; color: ${topic.color};">${completionRate}%</div>
-                                <div style="font-size: 0.9rem; color: #666;">Hoàn thành</div>
+                                <div style="font-size: 0.9rem; color: #666;">Completed</div>
                             </div>
                             <div style="text-align: center;">
                                 <div style="font-size: 1.5rem; font-weight: 600; color: ${topic.color};">${accuracy}%</div>
-                                <div style="font-size: 0.9rem; color: #666;">Độ chính xác</div>
+                                <div style="font-size: 0.9rem; color: #666;">Accuracy</div>
                             </div>
                         </div>
                         <div style="background: #f0f0f0; border-radius: 10px; height: 8px; overflow: hidden;">
@@ -565,12 +577,12 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
                     if (data.success) {
                         displayRecentActivity(data.data);
                     } else {
-                        document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Chưa có hoạt động nào.</p>';
+                        document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No recent activity available.</p>';
                     }
                 })
                 .catch(err => {
                     console.error('Error loading recent activity:', err);
-                    document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #f44336; padding: 2rem;">Có lỗi xảy ra khi tải hoạt động gần đây.</p>';
+                    document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #f44336; padding: 2rem;">Error loading recent activity.</p>';
                 });
         }
 

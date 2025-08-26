@@ -34,13 +34,13 @@
         }
 
         /* Header */
-        header {
-            background: rgba(255, 255, 255, 0.95);
+        .header {
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 100;
         }
 
         .header-content {
@@ -51,59 +51,45 @@
         }
 
         .logo {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #667eea;
+            color: white;
             text-decoration: none;
         }
 
         .nav-menu {
             display: flex;
-            gap: 1.5rem;
             list-style: none;
-            margin: 0;
-            padding: 0;
-            flex-wrap: nowrap;
-            white-space: nowrap;
-        }
-
-        .nav-menu li {
-            margin: 0;
-            padding: 0;
-            flex-shrink: 0;
+            gap: 2rem;
         }
 
         .nav-menu a {
+            color: white;
             text-decoration: none;
-            color: #333;
             font-weight: 500;
-            transition: color 0.3s ease;
-            padding: 0.5rem 0.8rem;
-            border-radius: 8px;
-            display: block;
-            font-size: 0.9rem;
+            transition: opacity 0.3s ease;
         }
 
         .nav-menu a:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            opacity: 0.8;
         }
 
         .user-info {
             display: flex;
             align-items: center;
             gap: 1rem;
+            color: white;
         }
 
         .btn {
-            padding: 0.5rem 1.5rem;
+            padding: 0.5rem 1rem;
             border: none;
             border-radius: 8px;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-weight: 500;
             text-decoration: none;
             display: inline-block;
+            transition: all 0.3s ease;
         }
 
         .btn-primary {
@@ -111,20 +97,14 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
-
         .btn-secondary {
-            background: transparent;
-            color: #667eea;
-            border: 2px solid #667eea;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .btn-secondary:hover {
-            background: #667eea;
-            color: white;
+        .btn:hover {
+            transform: translateY(-2px);
         }
 
         /* Main Content */
@@ -539,14 +519,7 @@
             }
 
             .nav-menu {
-                gap: 0.5rem;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .nav-menu a {
-                padding: 0.4rem 0.6rem;
-                font-size: 0.85rem;
+                gap: 1rem;
             }
 
             .hero-title {
@@ -617,10 +590,10 @@
         // Set login status for JavaScript
         const isUserLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
     </script>
-    <header>
+    <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="#" class="logo">
+                <a href="index.php" class="logo">
                     <i class="fas fa-book-open"></i> SmartDictionary
                 </a>
                 <nav>

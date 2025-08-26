@@ -3,7 +3,7 @@
 -- =====================================================
 -- This script removes duplicate/conflicting tables and standardizes the database structure
 -- Run this script to clean up table conflicts and foreign key issues
-
+USE eduapp;
 -- Show current tables before cleanup
 SELECT 'BEFORE CLEANUP - Current Tables:' as Status;
 SHOW TABLES;

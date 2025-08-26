@@ -1,4 +1,5 @@
 -- Create listening exercises table
+USE eduapp;
 CREATE TABLE IF NOT EXISTS listening_exercises (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,

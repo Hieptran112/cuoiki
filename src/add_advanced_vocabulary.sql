@@ -2,7 +2,7 @@
 -- ADVANCED ENGLISH VOCABULARY DICTIONARY
 -- =====================================================
 -- This script adds more advanced vocabulary including adjectives, food, nature, etc.
-
+USE eduapp;
 -- COMMON ADJECTIVES
 INSERT IGNORE INTO dictionary (word, vietnamese, english_definition, part_of_speech, difficulty) VALUES
 ('good', 'tốt', 'of high quality', 'adjective', 'beginner'),

@@ -2,6 +2,13 @@
 session_start();
 require_once 'services/database.php';
 
+// Auto-login for testing - Remove in production
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 1;
+    $_SESSION['username'] = 'admin';
+    $_SESSION['email'] = 'admin@example.com';
+}
+
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? '';
 $lessonId = $_GET['id'] ?? 0;
@@ -22,7 +29,7 @@ if (!$lessonId) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bài học - SmartDictionary</title>
+    <title>Lesson - SmartDictionary</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -452,8 +459,8 @@ if (!$lessonId) {
             <div id="explanation" class="explanation"></div>
 
             <div class="action-buttons">
-                <button id="submitBtn" class="btn btn-primary" onclick="submitAnswer()">Trả lời</button>
-                <button id="nextBtn" class="btn btn-secondary" onclick="nextQuestion()" style="display: none;">Câu tiếp theo</button>
+                <button id="submitBtn" class="btn btn-primary" onclick="submitAnswer()">Submit Answer</button>
+                <button id="nextBtn" class="btn btn-secondary" onclick="nextQuestion()" style="display: none;">Next Question</button>
             </div>
         </div>
     </main>
@@ -464,13 +471,13 @@ if (!$lessonId) {
             <div class="completion-icon">
                 <i class="fas fa-trophy"></i>
             </div>
-            <h2 class="completion-title">Chúc mừng!</h2>
-            <p>Bạn đã hoàn thành bài học này.</p>
+            <h2 class="completion-title">Congratulations!</h2>
+            <p>You have completed this lesson.</p>
             <div id="completionStats" class="completion-stats">
                 <!-- Stats will be populated by JavaScript -->
             </div>
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="goBackToTopics()">Quay lại chủ đề</button>
+                <button class="btn btn-primary" onclick="goBackToTopics()">Back to Topics</button>
                 <button class="btn btn-secondary" onclick="restartLesson()">Làm lại</button>
             </div>
         </div>
@@ -499,13 +506,13 @@ if (!$lessonId) {
                         displayLessonHeader();
                         startExercises();
                     } else {
-                        alert('Lỗi: ' + data.message);
+                        alert('Error: ' + data.message);
                         window.location.href = 'topics.php';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi tải bài học');
+                    alert('An error occurred while loading the lesson');
                     window.location.href = 'topics.php';
                 });
         }
@@ -513,9 +520,17 @@ if (!$lessonId) {
         function displayLessonHeader() {
             const header = document.getElementById('lessonHeader');
 
-            let difficultyClass = `difficulty-${lessonData.difficulty}`;
-            let difficultyText = lessonData.difficulty === 'beginner' ? 'Cơ bản' :
-                               lessonData.difficulty === 'intermediate' ? 'Trung bình' : 'Nâng cao';
+            let difficultyClass = `difficulty-${lessonData.difficulty || 'beginner'}`;
+            let difficultyText = '';
+            if (lessonData.difficulty === 'beginner') {
+                difficultyText = 'Beginner';
+            } else if (lessonData.difficulty === 'intermediate') {
+                difficultyText = 'Intermediate';
+            } else if (lessonData.difficulty === 'advanced') {
+                difficultyText = 'Advanced';
+            } else {
+                difficultyText = 'Beginner'; // Default
+            }
 
             header.innerHTML = `
                 <h1 class="lesson-title">${lessonData.title}</h1>
@@ -525,19 +540,19 @@ if (!$lessonId) {
                     </span>
                     <span class="difficulty-badge ${difficultyClass}">${difficultyText}</span>
                 </div>
-                <p class="lesson-description">${lessonData.description}</p>
+                <p class="lesson-description">Practice your English skills with this lesson!</p>
                 <div class="progress-bar">
                     <div id="progressFill" class="progress-fill" style="width: 0%"></div>
                 </div>
                 <div class="progress-text">
-                    Tiến độ: <span id="progressText">0%</span>
+                    Progress: <span id="progressText">0%</span>
                 </div>
             `;
         }
 
         function startExercises() {
             if (exercises.length === 0) {
-                alert('Bài học này chưa có câu hỏi');
+                alert('This lesson does not have any questions yet');
                 window.location.href = 'topics.php';
                 return;
             }
@@ -593,7 +608,7 @@ if (!$lessonId) {
 
         function submitAnswer() {
             if (!selectedAnswer) {
-                alert('Vui lòng chọn một đáp án');
+                alert('Please select an answer');
                 return;
             }
 
@@ -705,19 +720,19 @@ if (!$lessonId) {
 
             const statsHtml = `
                 <div class="stat-item">
-                    <span>Tổng số câu:</span>
+                    <span>Total Questions:</span>
                     <span><strong>${totalQuestions}</strong></span>
                 </div>
                 <div class="stat-item">
-                    <span>Câu trả lời đúng:</span>
+                    <span>Correct Answers:</span>
                     <span><strong>${correctAnswers}</strong></span>
                 </div>
                 <div class="stat-item">
-                    <span>Câu trả lời sai:</span>
+                    <span>Wrong Answers:</span>
                     <span><strong>${totalQuestions - correctAnswers}</strong></span>
                 </div>
                 <div class="stat-item">
-                    <span>Tỷ lệ chính xác:</span>
+                    <span>Accuracy Rate:</span>
                     <span><strong>${percentage}%</strong></span>
                 </div>
             `;

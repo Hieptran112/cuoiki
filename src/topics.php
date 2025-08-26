@@ -2,6 +2,13 @@
 session_start();
 require_once 'services/database.php';
 
+// Auto-login for testing - Remove in production
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 1;
+    $_SESSION['username'] = 'admin';
+    $_SESSION['email'] = 'admin@example.com';
+}
+
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? '';
 ?>
@@ -515,12 +522,12 @@ $username = $_SESSION['username'] ?? '';
 
                 let progressBadge = '';
                 let progressClass = 'progress-not-started';
-                let progressText = 'Chưa bắt đầu';
+                let progressText = 'Not Started';
 
                 if (lesson.progress) {
                     if (lesson.progress.is_completed) {
                         progressClass = 'progress-completed';
-                        progressText = 'Hoàn thành';
+                        progressText = 'Completed';
                     } else if (lesson.progress.completion_percentage > 0) {
                         progressClass = 'progress-in-progress';
                         progressText = `${Math.round(lesson.progress.completion_percentage)}%`;
@@ -529,18 +536,33 @@ $username = $_SESSION['username'] ?? '';
 
                 progressBadge = `<span class="progress-badge ${progressClass}">${progressText}</span>`;
 
-                let difficultyClass = `difficulty-${lesson.difficulty}`;
-                let difficultyText = lesson.difficulty === 'beginner' ? 'Cơ bản' :
-                                   lesson.difficulty === 'intermediate' ? 'Trung bình' : 'Nâng cao';
+                let difficultyClass = `difficulty-${lesson.difficulty || 'beginner'}`;
+                let difficultyText = '';
+                if (lesson.difficulty) {
+                    difficultyText = lesson.difficulty === 'beginner' ? 'Beginner' :
+                                   lesson.difficulty === 'intermediate' ? 'Intermediate' : 'Advanced';
+                } else {
+                    // Default difficulty based on lesson order
+                    if (lesson.lesson_order <= 3) {
+                        difficultyText = 'Beginner';
+                        difficultyClass = 'difficulty-beginner';
+                    } else if (lesson.lesson_order <= 6) {
+                        difficultyText = 'Intermediate';
+                        difficultyClass = 'difficulty-intermediate';
+                    } else {
+                        difficultyText = 'Advanced';
+                        difficultyClass = 'difficulty-advanced';
+                    }
+                }
 
                 lessonItem.innerHTML = `
-                    <div class="lesson-number">${lesson.lesson_number}</div>
+                    <div class="lesson-number">${lesson.lesson_order}</div>
                     <div class="lesson-info">
                         <div class="lesson-title">
                             ${lesson.title}
                             <span class="difficulty-badge ${difficultyClass}">${difficultyText}</span>
                         </div>
-                        <div class="lesson-description">${lesson.description}</div>
+                        <div class="lesson-description">Practice English vocabulary and grammar skills</div>
                     </div>
                     <div class="lesson-progress">
                         ${progressBadge}
