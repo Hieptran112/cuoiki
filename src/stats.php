@@ -46,8 +46,8 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 3rem;
             animation: fadeInUp 0.8s ease-out;
         }
@@ -251,7 +251,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
         <div class="stats-container">
             <div class="stats-header">
                 <h1><i class="fas fa-chart-line"></i> Thống kê học tập</h1>
-                <p>Theo dõi tiến độ học tập và thành tích của bạn</p>
+                <p>Theo dõi tiến độ học tập chủ đề, bài tập và flashcard của bạn</p>
                 <?php if ($isLoggedIn): ?>
                 <button onclick="refreshStats()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 0.75rem 1.5rem; border-radius: 50px; margin-top: 1rem; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px);">
                     <i class="fas fa-sync-alt"></i> Cập nhật thống kê
@@ -277,129 +277,110 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             <?php else: ?>
 
             <!-- Main Stats Grid -->
+            <!-- Overall Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-book"></i>
+                        <i class="fas fa-graduation-cap"></i>
                     </div>
-                    <div class="stat-number" id="totalWords">0</div>
-                    <div class="stat-label">Từ đã học</div>
+                    <div class="stat-number" id="lessonsCompleted">0</div>
+                    <div class="stat-label">Bài học hoàn thành</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="stat-number" id="correctAnswers">0</div>
-                    <div class="stat-label">Câu trả lời đúng</div>
+                    <div class="stat-number" id="topicExercisesCorrect">0</div>
+                    <div class="stat-label">Bài tập đúng</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-fire"></i>
+                        <i class="fas fa-cards-blank"></i>
                     </div>
-                    <div class="stat-number" id="streakDays">0</div>
-                    <div class="stat-label">Ngày liên tiếp</div>
+                    <div class="stat-number" id="flashcardsMastered">0</div>
+                    <div class="stat-label">Flashcard thành thạo</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-target"></i>
+                        <i class="fas fa-calendar-check"></i>
                     </div>
-                    <div class="stat-number" id="accuracy">0%</div>
-                    <div class="stat-label">Độ chính xác</div>
+                    <div class="stat-number" id="studyDays">0</div>
+                    <div class="stat-label">Ngày học tập</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="stat-number" id="dailyExercisesCorrect">0</div>
+                    <div class="stat-label">Bài tập hằng ngày đúng</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-number" id="totalPoints">0</div>
+                    <div class="stat-label">Tổng điểm</div>
                 </div>
             </div>
 
-            <!-- Dictionary Stats -->
+            <!-- Topic Learning Stats -->
             <div class="chart-section">
-                <h3 class="chart-title">Thống kê từ điển</h3>
-                <div class="stats-grid" style="margin-bottom: 0;">
+                <h3 class="chart-title">Thống kê học tập theo chủ đề</h3>
+                <div id="topicStats">
+                    <!-- Topic stats will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Flashcard Stats -->
+            <div class="chart-section">
+                <h3 class="chart-title">Thống kê Flashcard</h3>
+                <div class="stats-grid" style="margin-bottom: 1rem;">
                     <div class="stat-card">
                         <div class="stat-icon" style="color: #28a745;">
-                            <i class="fas fa-seedling"></i>
+                            <i class="fas fa-layer-group"></i>
                         </div>
-                        <div class="stat-number" id="beginnerWords">0</div>
-                        <div class="stat-label">Từ cơ bản</div>
+                        <div class="stat-number" id="totalDecks">0</div>
+                        <div class="stat-label">Bộ thẻ</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-icon" style="color: #ffc107;">
-                            <i class="fas fa-star"></i>
+                            <i class="fas fa-cards-blank"></i>
                         </div>
-                        <div class="stat-number" id="intermediateWords">0</div>
-                        <div class="stat-label">Từ trung cấp</div>
+                        <div class="stat-number" id="totalFlashcards">0</div>
+                        <div class="stat-label">Tổng thẻ</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-icon" style="color: #dc3545;">
-                            <i class="fas fa-crown"></i>
+                            <i class="fas fa-trophy"></i>
                         </div>
-                        <div class="stat-number" id="advancedWords">0</div>
-                        <div class="stat-label">Từ nâng cao</div>
+                        <div class="stat-number" id="masteredFlashcards">0</div>
+                        <div class="stat-label">Thẻ thành thạo</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-icon" style="color: #667eea;">
-                            <i class="fas fa-database"></i>
+                            <i class="fas fa-percentage"></i>
                         </div>
-                        <div class="stat-number" id="totalDictWords">0</div>
-                        <div class="stat-label">Tổng từ trong từ điển</div>
+                        <div class="stat-number" id="flashcardAccuracy">0%</div>
+                        <div class="stat-label">Độ chính xác</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Progress Bars -->
-            <div class="chart-section">
-                <h3 class="chart-title">Tiến độ học tập theo mức độ</h3>
-                <div id="progressBars">
-                    <!-- Progress bars will be generated here -->
-                </div>
-            </div>
-
-            <!-- Learning Goals -->
-            <div class="chart-section">
-                <h3 class="chart-title">Mục tiêu học tập</h3>
-                <div class="stats-grid" style="margin-bottom: 0;">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="color: #17a2b8;">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stat-number" id="dailyGoal">10</div>
-                        <div class="stat-label">Từ mới mỗi ngày</div>
-                        <div class="progress-bar" style="margin-top: 1rem;">
-                            <div class="progress-fill" id="dailyProgress" style="width: 0%; background: #17a2b8;"></div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon" style="color: #fd7e14;">
-                            <i class="fas fa-calendar-week"></i>
-                        </div>
-                        <div class="stat-number" id="weeklyGoal">50</div>
-                        <div class="stat-label">Từ mới mỗi tuần</div>
-                        <div class="progress-bar" style="margin-top: 1rem;">
-                            <div class="progress-fill" id="weeklyProgress" style="width: 0%; background: #fd7e14;"></div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon" style="color: #6f42c1;">
-                            <i class="fas fa-trophy"></i>
-                        </div>
-                        <div class="stat-number" id="monthlyGoal">200</div>
-                        <div class="stat-label">Từ mới mỗi tháng</div>
-                        <div class="progress-bar" style="margin-top: 1rem;">
-                            <div class="progress-fill" id="monthlyProgress" style="width: 0%; background: #6f42c1;"></div>
-                        </div>
-                    </div>
+                <div id="deckBreakdown">
+                    <!-- Deck breakdown will be loaded here -->
                 </div>
             </div>
 
             <?php if ($isLoggedIn): ?>
             <!-- Recent Activity -->
             <div class="recent-activity">
-                <h3 class="chart-title">Hoạt động gần đây</h3>
+                <h3 class="chart-title">Hoạt động học tập gần đây</h3>
                 <div id="recentActivity">
                     <!-- Recent activity will be loaded here -->
                 </div>
@@ -412,56 +393,138 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
     <script>
         // Load all stats
         function loadAllStats() {
-            loadDictionaryStats();
-            loadUserStats();
+            loadOverallStats();
+            loadTopicStats();
+            loadFlashcardStats();
             <?php if ($isLoggedIn): ?>
             loadRecentActivity();
             <?php endif; ?>
         }
 
-        function loadDictionaryStats() {
-            fetch('controllers/dictionary.php?action=get_stats')
+        function loadOverallStats() {
+            fetch('controllers/stats.php?action=get_overall_stats', { credentials: 'same-origin' })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         const stats = data.data;
-                        document.getElementById('totalDictWords').textContent = stats.total || 0;
-                        document.getElementById('beginnerWords').textContent = stats.beginner || 0;
-                        document.getElementById('intermediateWords').textContent = stats.intermediate || 0;
-                        document.getElementById('advancedWords').textContent = stats.advanced || 0;
-                        
-                        // Generate progress bars
-                        generateProgressBars(stats);
-                    }
-                })
-                .catch(err => console.error('Error loading dictionary stats:', err));
-        }
-
-        function loadUserStats() {
-            fetch('controllers/dictionary.php?action=get_user_stats', { credentials: 'same-origin' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const stats = data.data;
-
-                        // Animate numbers
-                        animateNumber('totalWords', stats.totalWords);
-                        animateNumber('correctAnswers', stats.correctAnswers);
-                        animateNumber('streakDays', stats.streakDays);
-                        animateNumber('accuracy', stats.accuracy, '%');
-
-                        // Update learning goals with real data
-                        updateLearningGoalsReal(stats);
+                        animateNumber('lessonsCompleted', stats.lessons_completed || 0);
+                        animateNumber('topicExercisesCorrect', stats.correct_topic_exercises || 0);
+                        animateNumber('flashcardsMastered', stats.flashcards_mastered || 0);
+                        animateNumber('studyDays', Math.max(stats.study_days_topics || 0, stats.study_days_flashcards || 0, stats.study_days_daily || 0));
+                        animateNumber('dailyExercisesCorrect', stats.daily_exercises_correct || 0);
+                        animateNumber('totalPoints', stats.total_points || 0);
                     }
                 })
                 .catch(err => {
-                    console.error('Error loading user stats:', err);
+                    console.error('Error loading overall stats:', err);
                     // Fallback to default values
-                    animateNumber('totalWords', 0);
-                    animateNumber('correctAnswers', 0);
-                    animateNumber('streakDays', 0);
-                    animateNumber('accuracy', 0, '%');
+                    animateNumber('lessonsCompleted', 0);
+                    animateNumber('topicExercisesCorrect', 0);
+                    animateNumber('flashcardsMastered', 0);
+                    animateNumber('studyDays', 0);
+                    animateNumber('dailyExercisesCorrect', 0);
+                    animateNumber('totalPoints', 0);
                 });
+        }
+
+        function loadTopicStats() {
+            fetch('controllers/stats.php?action=get_topic_stats', { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        displayTopicStats(data.data);
+                    }
+                })
+                .catch(err => console.error('Error loading topic stats:', err));
+        }
+
+        function loadFlashcardStats() {
+            fetch('controllers/stats.php?action=get_flashcard_stats', { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const stats = data.data.overall;
+                        animateNumber('totalDecks', stats.total_decks || 0);
+                        animateNumber('totalFlashcards', stats.total_flashcards || 0);
+                        animateNumber('masteredFlashcards', stats.mastered_cards || 0);
+
+                        const accuracy = stats.total_reviews > 0 ?
+                            Math.round((stats.total_correct_reviews / stats.total_reviews) * 100) : 0;
+                        animateNumber('flashcardAccuracy', accuracy, '%');
+
+                        displayDeckBreakdown(data.data.decks);
+                    }
+                })
+                .catch(err => console.error('Error loading flashcard stats:', err));
+        }
+
+        function displayTopicStats(topics) {
+            const container = document.getElementById('topicStats');
+            if (!topics || topics.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Chưa có dữ liệu học tập theo chủ đề.</p>';
+                return;
+            }
+
+            let html = '';
+            topics.forEach(topic => {
+                const completionRate = topic.total_lessons > 0 ?
+                    Math.round((topic.completed_lessons / topic.total_lessons) * 100) : 0;
+                const accuracy = topic.total_answers > 0 ?
+                    Math.round((topic.correct_answers / topic.total_answers) * 100) : 0;
+
+                html += `
+                    <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border-left: 4px solid ${topic.color};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="color: #333; margin: 0;">${topic.topic_name}</h4>
+                            <span style="background: ${topic.color}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem;">
+                                ${topic.completed_lessons}/${topic.total_lessons} bài
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 600; color: ${topic.color};">${completionRate}%</div>
+                                <div style="font-size: 0.9rem; color: #666;">Hoàn thành</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 600; color: ${topic.color};">${accuracy}%</div>
+                                <div style="font-size: 0.9rem; color: #666;">Độ chính xác</div>
+                            </div>
+                        </div>
+                        <div style="background: #f0f0f0; border-radius: 10px; height: 8px; overflow: hidden;">
+                            <div style="height: 100%; background: ${topic.color}; width: ${completionRate}%; transition: width 0.8s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function displayDeckBreakdown(decks) {
+            const container = document.getElementById('deckBreakdown');
+            if (!decks || decks.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 1rem;">Chưa có bộ thẻ nào.</p>';
+                return;
+            }
+
+            let html = '<h4 style="margin-bottom: 1rem; color: #333;">Chi tiết theo bộ thẻ:</h4>';
+            decks.forEach(deck => {
+                const masteryRate = deck.card_count > 0 ?
+                    Math.round((deck.mastered_count / deck.card_count) * 100) : 0;
+
+                html += `
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 500; color: #333;">${deck.deck_name}</div>
+                            <div style="font-size: 0.9rem; color: #666;">${deck.studied_count}/${deck.card_count} thẻ đã học</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 600; color: #28a745;">${masteryRate}%</div>
+                            <div style="font-size: 0.8rem; color: #666;">Thành thạo</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
 
         function animateNumber(elementId, targetValue, suffix = '') {
@@ -492,121 +555,84 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
             requestAnimationFrame(updateNumber);
         }
 
-        function generateProgressBars(stats) {
-            const total = stats.total || 1;
-            const progressBarsContainer = document.getElementById('progressBars');
-            
-            const levels = [
-                { name: 'Cơ bản', value: stats.beginner || 0, color: '#28a745' },
-                { name: 'Trung cấp', value: stats.intermediate || 0, color: '#ffc107' },
-                { name: 'Nâng cao', value: stats.advanced || 0, color: '#dc3545' }
-            ];
 
-            let html = '';
-            levels.forEach(level => {
-                const percentage = Math.round((level.value / total) * 100);
-                html += `
-                    <div style="margin-bottom: 1.5rem;">
-                        <div class="progress-label">
-                            <span>${level.name}</span>
-                            <span>${level.value} từ (${percentage}%)</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${percentage}%; background: ${level.color};"></div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            progressBarsContainer.innerHTML = html;
-        }
-
-        function updateLearningGoalsReal(stats) {
-            // Sử dụng dữ liệu thực từ database
-            const dailyCorrect = stats.todayCorrect || 0;
-            const weeklyCorrect = stats.weeklyCorrect || 0;
-            const monthlyCorrect = stats.monthlyCorrect || 0;
-
-            const dailyGoal = 10;
-            const weeklyGoal = 50;
-            const monthlyGoal = 200;
-
-            // Calculate progress percentages
-            const dailyProgress = Math.min((dailyCorrect / dailyGoal) * 100, 100);
-            const weeklyProgress = Math.min((weeklyCorrect / weeklyGoal) * 100, 100);
-            const monthlyProgress = Math.min((monthlyCorrect / monthlyGoal) * 100, 100);
-
-            // Animate progress bars
-            setTimeout(() => {
-                document.getElementById('dailyProgress').style.width = dailyProgress + '%';
-                document.getElementById('weeklyProgress').style.width = weeklyProgress + '%';
-                document.getElementById('monthlyProgress').style.width = monthlyProgress + '%';
-            }, 1000);
-
-            // Update goal numbers with current progress
-            document.getElementById('dailyGoal').textContent = `${dailyCorrect}/${dailyGoal}`;
-            document.getElementById('weeklyGoal').textContent = `${weeklyCorrect}/${weeklyGoal}`;
-            document.getElementById('monthlyGoal').textContent = `${monthlyCorrect}/${monthlyGoal}`;
-        }
-
-        // Keep old function for backward compatibility
-        function updateLearningGoals(totalWords) {
-            updateLearningGoalsReal({
-                todayCorrect: 0,
-                weeklyCorrect: 0,
-                monthlyCorrect: 0
-            });
-        }
 
         <?php if ($isLoggedIn): ?>
         function loadRecentActivity() {
-            fetch('controllers/dictionary.php?action=get_answer_breakdown', { credentials: 'same-origin' })
+            fetch('controllers/stats.php?action=get_recent_activity', { credentials: 'same-origin' })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        const correct = data.data.correct || [];
-                        const wrong = data.data.wrong || [];
-                        
-                        let html = '';
-                        
-                        // Show recent correct answers
-                        correct.slice(0, 5).forEach(item => {
-                            html += `
-                                <div class="activity-item">
-                                    <div class="activity-icon activity-correct">
-                                        <i class="fas fa-check"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-word">${item.word}</div>
-                                        <div class="activity-meaning">${item.vietnamese}</div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-
-                        // Show recent wrong answers
-                        wrong.slice(0, 3).forEach(item => {
-                            html += `
-                                <div class="activity-item">
-                                    <div class="activity-icon activity-wrong">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="activity-word">${item.word}</div>
-                                        <div class="activity-meaning">${item.vietnamese} - Cần ôn lại</div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-
-                        if (html === '') {
-                            html = '<div style="text-align: center; color: #666; padding: 2rem;">Chưa có hoạt động nào hôm nay</div>';
-                        }
-
-                        document.getElementById('recentActivity').innerHTML = html;
+                        displayRecentActivity(data.data);
+                    } else {
+                        document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Chưa có hoạt động nào.</p>';
                     }
                 })
-                .catch(err => console.error('Error loading recent activity:', err));
+                .catch(err => {
+                    console.error('Error loading recent activity:', err);
+                    document.getElementById('recentActivity').innerHTML = '<p style="text-align: center; color: #f44336; padding: 2rem;">Có lỗi xảy ra khi tải hoạt động gần đây.</p>';
+                });
+        }
+
+        function displayRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Chưa có hoạt động học tập nào.</p>';
+                return;
+            }
+
+            let html = '';
+            activities.forEach(activity => {
+                const isCorrect = activity.is_correct == 1;
+                const timeAgo = formatTimeAgo(activity.activity_time);
+
+                if (activity.activity_type === 'topic_exercise') {
+                    html += `
+                        <div class="activity-item">
+                            <div class="activity-icon ${isCorrect ? 'activity-correct' : 'activity-wrong'}">
+                                <i class="fas ${isCorrect ? 'fa-check' : 'fa-times'}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-word">Bài tập: ${activity.topic_name}</div>
+                                <div class="activity-meaning">${activity.lesson_title} - ${isCorrect ? 'Đúng' : 'Sai'}</div>
+                                <div class="activity-time">${timeAgo}</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (activity.activity_type === 'flashcard_review') {
+                    html += `
+                        <div class="activity-item">
+                            <div class="activity-icon ${isCorrect ? 'activity-correct' : 'activity-wrong'}">
+                                <i class="fas fa-cards-blank"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-word">Flashcard: ${activity.activity_description}</div>
+                                <div class="activity-meaning">${activity.deck_name} - ${activity.ease_level || 'Đánh giá'}</div>
+                                <div class="activity-time">${timeAgo}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (html === '') {
+                html = '<div style="text-align: center; color: #666; padding: 2rem;">Chưa có hoạt động nào hôm nay</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) return 'Vừa xong';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+            return date.toLocaleDateString('vi-VN');
         }
         <?php endif; ?>
 

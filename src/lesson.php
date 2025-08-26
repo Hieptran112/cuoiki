@@ -6,6 +6,12 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? '';
 $lessonId = $_GET['id'] ?? 0;
 
+// Require login for lessons
+if (!$isLoggedIn) {
+    header('Location: index.php?message=' . urlencode('Bạn cần đăng nhập để học bài.'));
+    exit;
+}
+
 if (!$lessonId) {
     header('Location: topics.php');
     exit;
@@ -132,16 +138,46 @@ if (!$lessonId) {
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
+            position: relative;
+            overflow: hidden;
         }
 
         .option:hover {
             background: #e9ecef;
             border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
         }
 
         .option.selected {
             background: #e3f2fd;
             border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+            animation: selectedPulse 0.3s ease-out;
+        }
+
+        .option.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.05) 100%);
+            pointer-events: none;
+        }
+
+        @keyframes selectedPulse {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-2px) scale(1.02);
+            }
+            100% {
+                transform: translateY(-2px) scale(1);
+            }
         }
 
         .option.correct {
@@ -166,6 +202,13 @@ if (!$lessonId) {
             font-weight: bold;
             margin-right: 1rem;
             flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .option.selected .option-letter {
+            background: #2980b9;
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
         }
 
         .option.correct .option-letter {
@@ -557,36 +600,60 @@ if (!$lessonId) {
             const exercise = exercises[currentExerciseIndex];
             const isCorrect = selectedAnswer === exercise.correct_answer;
 
-            // Save result
-            results.push({
-                exercise_id: exercise.id,
-                selected_answer: selectedAnswer,
-                is_correct: isCorrect
-            });
-
-            // Show correct/incorrect styling
-            document.querySelectorAll('.option').forEach(opt => {
-                const letter = opt.querySelector('.option-letter').textContent;
-                if (letter === exercise.correct_answer) {
-                    opt.classList.add('correct');
-                } else if (letter === selectedAnswer && !isCorrect) {
-                    opt.classList.add('incorrect');
-                }
-                opt.onclick = null; // Disable clicking
-            });
-
             // Show explanation
             const explanation = document.getElementById('explanation');
             explanation.textContent = isCorrect ? exercise.explanation_correct : exercise.explanation_wrong;
             explanation.className = `explanation show ${isCorrect ? 'correct' : 'incorrect'}`;
 
-            // Update buttons
-            document.getElementById('submitBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'inline-block';
+            if (isCorrect) {
+                // Save result only if correct
+                results.push({
+                    exercise_id: exercise.id,
+                    selected_answer: selectedAnswer,
+                    is_correct: isCorrect
+                });
 
-            // Submit to server if logged in
-            if (isUserLoggedIn) {
-                submitToServer(exercise.id, selectedAnswer);
+                // Show correct styling
+                document.querySelectorAll('.option').forEach(opt => {
+                    const letter = opt.querySelector('.option-letter').textContent;
+                    if (letter === exercise.correct_answer) {
+                        opt.classList.add('correct');
+                    }
+                    opt.onclick = null; // Disable clicking
+                });
+
+                // Update buttons
+                document.getElementById('submitBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+
+                // Update progress
+                updateProgress();
+
+                // Submit to server if logged in
+                if (isUserLoggedIn) {
+                    submitToServer(exercise.id, selectedAnswer);
+                }
+            } else {
+                // Show incorrect styling
+                document.querySelectorAll('.option').forEach(opt => {
+                    const letter = opt.querySelector('.option-letter').textContent;
+                    if (letter === exercise.correct_answer) {
+                        opt.classList.add('correct');
+                    } else if (letter === selectedAnswer) {
+                        opt.classList.add('incorrect');
+                    }
+                });
+
+                // Allow retry after showing explanation
+                setTimeout(() => {
+                    // Reset for retry
+                    document.querySelectorAll('.option').forEach(opt => {
+                        opt.classList.remove('selected', 'correct', 'incorrect');
+                        opt.onclick = () => selectOption(opt.querySelector('.option-letter').textContent);
+                    });
+                    selectedAnswer = null;
+                    explanation.className = 'explanation';
+                }, 3000);
             }
         }
 
@@ -625,7 +692,8 @@ if (!$lessonId) {
         }
 
         function updateProgress() {
-            const progress = ((currentExerciseIndex + 1) / exercises.length) * 100;
+            const correctAnswers = results.filter(r => r.is_correct).length;
+            const progress = (correctAnswers / exercises.length) * 100;
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('progressText').textContent = Math.round(progress) + '%';
         }

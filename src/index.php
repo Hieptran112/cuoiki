@@ -2,6 +2,7 @@
     session_start();
     $isLoggedIn = isset($_SESSION['user_id']);
     $username = $isLoggedIn ? ($_SESSION['username'] ?? null) : null;
+    $loginMessage = $_GET['message'] ?? null;
 ?>
 
 <!DOCTYPE html>
@@ -58,8 +59,18 @@
 
         .nav-menu {
             display: flex;
-            gap: 2rem;
+            gap: 1.5rem;
             list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .nav-menu li {
+            margin: 0;
+            padding: 0;
+            flex-shrink: 0;
         }
 
         .nav-menu a {
@@ -67,10 +78,15 @@
             color: #333;
             font-weight: 500;
             transition: color 0.3s ease;
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            display: block;
+            font-size: 0.9rem;
         }
 
         .nav-menu a:hover {
             color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
         }
 
         .user-info {
@@ -319,7 +335,7 @@
             background: #f8f9fa;
             border-radius: 12px;
             padding: 1.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
             border-left: 4px solid #667eea;
         }
 
@@ -341,11 +357,46 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .option:hover {
             border-color: #667eea;
             background: #f0f2ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #e8ecff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            animation: selectedPulse 0.3s ease-out;
+        }
+
+        .option.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+            pointer-events: none;
+        }
+
+        @keyframes selectedPulse {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-2px) scale(1.02);
+            }
+            100% {
+                transform: translateY(-2px) scale(1);
+            }
         }
 
         .option.correct {
@@ -488,7 +539,14 @@
             }
 
             .nav-menu {
-                gap: 1rem;
+                gap: 0.5rem;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .nav-menu a {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.85rem;
             }
 
             .hero-title {
@@ -567,16 +625,17 @@
                 </a>
                 <nav>
                     <ul class="nav-menu">
-                        <li><a href="#dictionary">Từ điển</a></li>
-                        <li><a href="#exercises">Bài tập</a></li>
+                        <li><a href="index.php">Trang chủ</a></li>
                         <li><a href="topics.php">Chủ đề</a></li>
                         <li><a href="flashcards.php">Flashcards</a></li>
+                        <li><a href="listening.php">Nghe</a></li>
                         <li><a href="stats.php">Thống kê</a></li>
                     </ul>
                 </nav>
                 <div class="user-info">
                     <?php if ($isLoggedIn): ?>
                         <span>Xin chào, <?php echo htmlspecialchars($username); ?></span>
+                        <a href="profile.php" class="btn btn-primary">Hồ sơ</a>
                         <a href="controllers/logout.php" class="btn btn-secondary">Đăng xuất</a>
                     <?php else: ?>
                         <a href="#" onclick="openModal('login')" class="btn btn-primary">Đăng nhập</a>
@@ -610,7 +669,7 @@
                         <i class="fas fa-search"></i> Tìm kiếm
                     </button>
                 </div>
-                
+
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
                     <p>Đang tìm kiếm...</p>
@@ -730,7 +789,7 @@
         function searchWord() {
             const searchInput = document.getElementById('searchInput');
             const word = searchInput.value.trim();
-            
+
             if (!word) {
                 showSnackbar('Vui lòng nhập từ cần tra cứu', 'error');
                 return;
@@ -738,7 +797,7 @@
 
             const loading = document.getElementById('loading');
             const result = document.getElementById('dictionaryResult');
-            
+
             loading.style.display = 'block';
             result.style.display = 'none';
 
@@ -752,7 +811,7 @@
             .then(data => {
                 loading.style.display = 'none';
                 result.style.display = 'block';
-                
+
                 if (data.success && data.data.length > 0) {
                     displayDictionaryResult(data.data[0]);
                 } else {
@@ -778,7 +837,7 @@
 
         function displayDictionaryResult(data) {
             const result = document.getElementById('dictionaryResult');
-            
+
             let html = `
                 <div class="word-header">
                     <div>
@@ -975,7 +1034,7 @@
         // Load daily exercises
         function loadDailyExercises() {
             const container = document.getElementById('exerciseContainer');
-            
+
             // Gọi API để lấy bài tập thực tế
             fetch('controllers/dictionary.php?action=get_daily_exercises', {
                 method: 'GET'
@@ -1086,11 +1145,11 @@
             document.querySelectorAll(`[data-exercise="${exerciseIndex}"]`).forEach(option => {
                 option.classList.remove('selected');
             });
-            
+
             // Select current option
             const selectedOption = document.querySelector(`[data-exercise="${exerciseIndex}"][data-option="${optionIndex}"]`);
             selectedOption.classList.add('selected');
-            
+
             // Show submit button
             const submitBtn = selectedOption.parentElement.nextElementSibling;
             submitBtn.style.display = 'block';
@@ -1126,7 +1185,7 @@
             }
 
             // Update stats
-            updateStats();
+            updateStats(isCorrect);
 
             // Persist answer for scheduling if logged in
             if (dictionaryId > 0) {
@@ -1143,6 +1202,32 @@
 
 
 
+        // Update user stats
+        function updateStats(isCorrect) {
+            if (!isUserLoggedIn) return;
+
+            fetch('controllers/stats.php?action=update_daily_stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    exercise_type: 'daily_exercise',
+                    is_correct: isCorrect,
+                    points: isCorrect ? 10 : 0
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Stats updated successfully');
+                } else {
+                    console.error('Failed to update stats:', data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error updating stats:', err);
+            });
+        }
         // Authentication functions
         function handleLogin(event) {
             event.preventDefault();
@@ -1204,6 +1289,108 @@
             }
         });
 
+        // Add word to deck from dictionary search
+        function openAddToDecksFromLast() {
+            if (!window.lastDictionaryResult) {
+                showSnackbar('Không có từ nào để thêm', 'error');
+                return;
+            }
+
+            const word = window.lastDictionaryResult;
+
+            // Get user's decks first
+            fetch('controllers/flashcards.php?action=get_decks', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(res => {
+                    console.log('Response status:', res.status);
+                    return res.json();
+                })
+                .then(data => {
+                    console.log('Decks response:', data);
+                    if (data.success) {
+                        if (data.data && data.data.length > 0) {
+                            // Show deck selection modal
+                            showDeckSelectionModal(word, data.data);
+                        } else {
+                            showSnackbar('Bạn chưa có bộ thẻ nào. Hãy tạo bộ thẻ trước.', 'error');
+                        }
+                    } else {
+                        showSnackbar(data.message || 'Có lỗi xảy ra khi tải danh sách bộ thẻ', 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading decks:', err);
+                    showSnackbar('Có lỗi xảy ra khi tải danh sách bộ thẻ', 'error');
+                });
+        }
+
+        function showDeckSelectionModal(word, decks) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 1000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%;">
+                    <h3>Thêm từ "${word.word}" vào bộ thẻ</h3>
+                    <p style="margin: 1rem 0; color: #666;">${word.vietnamese}</p>
+                    <select id="deck-select" style="width: 100%; padding: 0.5rem; margin: 1rem 0; border: 1px solid #ddd; border-radius: 4px;">
+                        ${decks.map(deck => `<option value="${deck.id}">${deck.name}</option>`).join('')}
+                    </select>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button onclick="this.closest('div').parentElement.remove()" style="padding: 0.5rem 1rem; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Hủy</button>
+                        <button onclick="addWordToDeck()" style="padding: 0.5rem 1rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">Thêm</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        function addWordToDeck() {
+            const deckId = document.getElementById('deck-select').value;
+            const word = window.lastDictionaryResult;
+
+            fetch('controllers/flashcards.php?action=add_word_to_deck', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    deck_id: deckId,
+                    word: word.word,
+                    definition: word.vietnamese,
+                    example: word.example || ''
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showSnackbar('Đã thêm từ vào bộ thẻ!', 'success');
+                    document.querySelector('[style*="position: fixed"]').remove();
+                } else {
+                    showSnackbar(data.message || 'Có lỗi xảy ra', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error adding word:', err);
+                showSnackbar('Có lỗi xảy ra khi thêm từ', 'error');
+            });
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             setupAutocomplete();
@@ -1211,6 +1398,15 @@
             if (isUserLoggedIn) {
                 loadDailyExercises();
             }
+
+            // Show login message if redirected from protected page
+            <?php if ($loginMessage): ?>
+            showSnackbar('<?php echo addslashes($loginMessage); ?>', 'error');
+            // Auto open login modal
+            setTimeout(() => {
+                openModal('login');
+            }, 1000);
+            <?php endif; ?>
         });
     </script>
 </body>

@@ -20,9 +20,11 @@ switch ($action) {
         addWord();
         break;
     case 'get_daily_exercises':
+        requireLogin();
         getDailyExercises();
         break;
     case 'submit_exercise':
+        requireLogin();
         submitExercise();
         break;
     case 'get_stats':
@@ -41,12 +43,15 @@ switch ($action) {
         bulkImport();
         break;
     case 'submit_daily_answer':
+        requireLogin();
         submitDailyAnswer();
         break;
     case 'get_answer_breakdown':
+        requireLogin();
         getAnswerBreakdown();
         break;
     case 'get_recent_learned':
+        requireLogin();
         getRecentLearned();
         break;
     case 'get_user_stats':
@@ -61,6 +66,13 @@ switch ($action) {
     default:
         echo json_encode(["success" => false, "message" => "Action không hợp lệ"]);
         break;
+}
+
+function requireLogin() {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(["success" => false, "message" => "Vui lòng đăng nhập để thực hiện chức năng này"]);
+        exit;
+    }
 }
 
 function searchWord() {
@@ -184,31 +196,91 @@ function getDailyExercises() {
 
         // Tạo bài tập trắc nghiệm
         $quizExercises = [];
-        foreach ($exercises as $exercise) {
-            // Lấy 3 từ khác làm đáp án sai
-            $stmt = $conn->prepare("SELECT vietnamese FROM dictionary WHERE id != ? ORDER BY RAND() LIMIT 3");
-            $stmt->bind_param("i", $exercise['id']);
-            $stmt->execute();
-            $wrongAnswers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
+        foreach ($exercises as $index => $exercise) {
+            // Quyết định loại câu hỏi: 70% hỏi nghĩa tiếng Việt, 30% hỏi từ đồng nghĩa
+            $questionType = ($index % 10 < 7) ? 'vietnamese' : 'synonym';
 
-            $options = [$exercise['vietnamese']];
-            foreach ($wrongAnswers as $wrong) {
-                $options[] = $wrong['vietnamese'];
+            if ($questionType === 'vietnamese') {
+                // Câu hỏi nghĩa tiếng Việt
+                $stmt = $conn->prepare("SELECT vietnamese FROM dictionary WHERE id != ? ORDER BY RAND() LIMIT 3");
+                $stmt->bind_param("i", $exercise['id']);
+                $stmt->execute();
+                $wrongAnswers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                $stmt->close();
+
+                $options = [$exercise['vietnamese']];
+                foreach ($wrongAnswers as $wrong) {
+                    $options[] = $wrong['vietnamese'];
+                }
+
+                shuffle($options);
+                $correctIndex = array_search($exercise['vietnamese'], $options);
+
+                $quizExercises[] = [
+                    'question' => "What does '{$exercise['word']}' mean in Vietnamese?",
+                    'options' => $options,
+                    'correct' => $correctIndex,
+                    'dictionary_id' => (int)$exercise['id'],
+                    'word' => $exercise['word'],
+                    'part_of_speech' => $exercise['part_of_speech']
+                ];
+            } else {
+                // Câu hỏi từ đồng nghĩa (tiếng Anh)
+                $synonyms = [
+                    'good' => ['excellent', 'great', 'wonderful'],
+                    'bad' => ['terrible', 'awful', 'horrible'],
+                    'big' => ['large', 'huge', 'enormous'],
+                    'small' => ['tiny', 'little', 'mini'],
+                    'happy' => ['joyful', 'cheerful', 'glad'],
+                    'sad' => ['unhappy', 'depressed', 'miserable'],
+                    'fast' => ['quick', 'rapid', 'speedy'],
+                    'slow' => ['sluggish', 'gradual', 'leisurely']
+                ];
+
+                $word = strtolower($exercise['word']);
+                if (isset($synonyms[$word])) {
+                    $correctSynonym = $synonyms[$word][0];
+                    $wrongOptions = ['beautiful', 'difficult', 'important'];
+
+                    $options = [$correctSynonym];
+                    $options = array_merge($options, array_slice($wrongOptions, 0, 3));
+                    shuffle($options);
+                    $correctIndex = array_search($correctSynonym, $options);
+
+                    $quizExercises[] = [
+                        'question' => "What is another word for '{$exercise['word']}'?",
+                        'options' => $options,
+                        'correct' => $correctIndex,
+                        'dictionary_id' => (int)$exercise['id'],
+                        'word' => $exercise['word'],
+                        'part_of_speech' => $exercise['part_of_speech']
+                    ];
+                } else {
+                    // Fallback to Vietnamese meaning if no synonyms available
+                    $stmt = $conn->prepare("SELECT vietnamese FROM dictionary WHERE id != ? ORDER BY RAND() LIMIT 3");
+                    $stmt->bind_param("i", $exercise['id']);
+                    $stmt->execute();
+                    $wrongAnswers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                    $stmt->close();
+
+                    $options = [$exercise['vietnamese']];
+                    foreach ($wrongAnswers as $wrong) {
+                        $options[] = $wrong['vietnamese'];
+                    }
+
+                    shuffle($options);
+                    $correctIndex = array_search($exercise['vietnamese'], $options);
+
+                    $quizExercises[] = [
+                        'question' => "What does '{$exercise['word']}' mean in Vietnamese?",
+                        'options' => $options,
+                        'correct' => $correctIndex,
+                        'dictionary_id' => (int)$exercise['id'],
+                        'word' => $exercise['word'],
+                        'part_of_speech' => $exercise['part_of_speech']
+                    ];
+                }
             }
-
-            // Xáo trộn thứ tự đáp án
-            shuffle($options);
-            $correctIndex = array_search($exercise['vietnamese'], $options);
-
-            $quizExercises[] = [
-                'question' => "Từ tiếng Anh '{$exercise['word']}' có nghĩa là gì?",
-                'options' => $options,
-                'correct' => $correctIndex,
-                'dictionary_id' => (int)$exercise['id'],
-                'word' => $exercise['word'],
-                'part_of_speech' => $exercise['part_of_speech']
-            ];
         }
 
         echo json_encode(["success" => true, "data" => $quizExercises]);
@@ -221,8 +293,8 @@ function getDailyExercises() {
 function getMixedExercises() {
     global $conn;
     try {
-        // Pick 8 random words
-        $stmt = $conn->prepare("SELECT id, word, vietnamese, english_definition, example, part_of_speech FROM dictionary ORDER BY RAND() LIMIT 8");
+        // Pick 10 random words
+        $stmt = $conn->prepare("SELECT id, word, vietnamese, english_definition, example, part_of_speech FROM dictionary ORDER BY RAND() LIMIT 10");
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         if (count($rows) === 0) { echo json_encode(["success"=>true, "data"=>[]]); return; }
@@ -241,13 +313,52 @@ function getMixedExercises() {
             $options = array_merge($options, array_slice($wrong, 0, max(0, 3)));
             shuffle($options);
             $correctIndex = array_search($q['vietnamese'], $options);
-            $exercises[] = [
-                'type' => 'multiple_choice',
-                'question' => "Từ tiếng Anh '{$q['word']}' có nghĩa là gì?",
-                'options' => $options,
-                'correct' => $correctIndex,
-                'meta' => [ 'word' => $q['word'], 'pos' => $q['part_of_speech'] ]
-            ];
+            // Quyết định loại câu hỏi
+            $questionType = ($i % 3 === 0) ? 'synonym' : 'vietnamese';
+
+            if ($questionType === 'synonym') {
+                // Câu hỏi từ đồng nghĩa
+                $synonyms = [
+                    'good' => 'excellent', 'bad' => 'terrible', 'big' => 'large',
+                    'small' => 'tiny', 'happy' => 'joyful', 'sad' => 'unhappy'
+                ];
+
+                $word = strtolower($q['word']);
+                if (isset($synonyms[$word])) {
+                    $correctSynonym = $synonyms[$word];
+                    $wrongSynonyms = ['beautiful', 'difficult', 'important'];
+                    $synOptions = [$correctSynonym];
+                    $synOptions = array_merge($synOptions, array_slice($wrongSynonyms, 0, 3));
+                    shuffle($synOptions);
+                    $synCorrectIndex = array_search($correctSynonym, $synOptions);
+
+                    $exercises[] = [
+                        'type' => 'multiple_choice',
+                        'question' => "What is another word for '{$q['word']}'?",
+                        'options' => $synOptions,
+                        'correct' => $synCorrectIndex,
+                        'meta' => [ 'word' => $q['word'], 'pos' => $q['part_of_speech'] ]
+                    ];
+                } else {
+                    // Fallback to Vietnamese
+                    $exercises[] = [
+                        'type' => 'multiple_choice',
+                        'question' => "What does '{$q['word']}' mean in Vietnamese?",
+                        'options' => $options,
+                        'correct' => $correctIndex,
+                        'meta' => [ 'word' => $q['word'], 'pos' => $q['part_of_speech'] ]
+                    ];
+                }
+            } else {
+                // Câu hỏi nghĩa tiếng Việt
+                $exercises[] = [
+                    'type' => 'multiple_choice',
+                    'question' => "What does '{$q['word']}' mean in Vietnamese?",
+                    'options' => $options,
+                    'correct' => $correctIndex,
+                    'meta' => [ 'word' => $q['word'], 'pos' => $q['part_of_speech'] ]
+                ];
+            }
         }
 
         // Removed matching exercises
