@@ -304,7 +304,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-cards-blank"></i>
+                        <i class="fas fa-star"></i>
                     </div>
                     <div class="stat-number" id="flashcardsMastered">0</div>
                     <div class="stat-label">Flashcards Mastered</div>
@@ -357,7 +357,7 @@ $username = $isLoggedIn ? $_SESSION['username'] : '';
 
                     <div class="stat-card">
                         <div class="stat-icon" style="color: #ffc107;">
-                            <i class="fas fa-cards-blank"></i>
+                            <i class="fas fa-clone"></i>
                         </div>
                         <div class="stat-number" id="totalFlashcards">0</div>
                         <div class="stat-label">Tổng thẻ</div>

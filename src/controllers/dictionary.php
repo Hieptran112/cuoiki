@@ -87,43 +87,69 @@ function searchWord() {
     }
     
     try {
-        // Tìm kiếm trong database
-        $stmt = $conn->prepare("SELECT * FROM dictionary WHERE word LIKE ? OR vietnamese LIKE ?");
-        $searchTerm = "%$word%";
-        $stmt->bind_param("ss", $searchTerm, $searchTerm);
+        // Tìm kiếm exact match trước
+        $stmt = $conn->prepare("SELECT * FROM dictionary WHERE word = ?");
+        $stmt->bind_param("s", $word);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows > 0) {
-            $words = [];
-            while ($row = $result->fetch_assoc()) {
-                $words[] = [
-                    'id' => $row['id'],
-                    'word' => $row['word'],
-                    'phonetic' => $row['phonetic'],
-                    'vietnamese' => $row['vietnamese'],
-                    'english_definition' => $row['english_definition'],
-                    'example' => $row['example'],
-                    'part_of_speech' => $row['part_of_speech'],
-                    'difficulty' => $row['difficulty']
-                ];
-            }
+            // Tìm thấy exact match
+            $exactMatch = $result->fetch_assoc();
+            $words = [[
+                'id' => $exactMatch['id'],
+                'word' => $exactMatch['word'],
+                'phonetic' => $exactMatch['phonetic'],
+                'vietnamese' => $exactMatch['vietnamese'],
+                'english_definition' => $exactMatch['english_definition'],
+                'example' => $exactMatch['example'],
+                'part_of_speech' => $exactMatch['part_of_speech'],
+                'difficulty' => $exactMatch['difficulty']
+            ]];
             echo json_encode(["success" => true, "data" => $words]);
         } else {
-            // Nếu không tìm thấy, trả về dữ liệu mẫu
-            $mockData = [
-                'word' => $word,
-                'phonetic' => "/ˈ" . strtolower($word) . "/",
-                'vietnamese' => "Định nghĩa tiếng Việt cho từ '$word'",
-                'english_definition' => "English definition for '$word'",
-                'example' => "Example sentence using '$word'",
-                'part_of_speech' => 'noun',
-                'difficulty' => 'intermediate'
-            ];
-            echo json_encode(["success" => true, "data" => [$mockData]]);
+            // Không có exact match, tìm kiếm partial match
+            $stmt = $conn->prepare("SELECT * FROM dictionary WHERE word LIKE ? OR vietnamese LIKE ? ORDER BY
+                CASE
+                    WHEN word LIKE ? THEN 1
+                    WHEN word LIKE ? THEN 2
+                    ELSE 3
+                END, word ASC");
+            $searchTerm = "%$word%";
+            $startsWith = "$word%";
+            $stmt->bind_param("ssss", $searchTerm, $searchTerm, $startsWith, $searchTerm);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $words = [];
+                while ($row = $result->fetch_assoc()) {
+                    $words[] = [
+                        'id' => $row['id'],
+                        'word' => $row['word'],
+                        'phonetic' => $row['phonetic'],
+                        'vietnamese' => $row['vietnamese'],
+                        'english_definition' => $row['english_definition'],
+                        'example' => $row['example'],
+                        'part_of_speech' => $row['part_of_speech'],
+                        'difficulty' => $row['difficulty']
+                    ];
+                }
+                echo json_encode(["success" => true, "data" => $words]);
+            } else {
+                // Nếu không tìm thấy, trả về dữ liệu mẫu
+                $mockData = [
+                    'word' => $word,
+                    'phonetic' => "/ˈ" . strtolower($word) . "/",
+                    'vietnamese' => "Định nghĩa tiếng Việt cho từ '$word'",
+                    'english_definition' => "English definition for '$word'",
+                    'example' => "Example sentence using '$word'",
+                    'part_of_speech' => 'noun',
+                    'difficulty' => 'intermediate'
+                ];
+                echo json_encode(["success" => true, "data" => [$mockData]]);
+            }
         }
-        
-        $stmt->close();
     } catch (Exception $e) {
         echo json_encode(["success" => false, "message" => "Lỗi tìm kiếm: " . $e->getMessage()]);
     }

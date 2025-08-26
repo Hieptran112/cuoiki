@@ -364,7 +364,7 @@ function submitReview() {
     $isCorrect = in_array($rating, ['good','easy']) ? 1 : 0;
     $isIncorrect = in_array($rating, ['again','hard']) ? 1 : 0;
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iissiiisdii", $_SESSION['user_id'], $flashcardId, $status, $rating, $isCorrect, $isIncorrect, $nextDue, $ef, $intervalDays, $reps);
+    $stmt->bind_param("iissiiisdi", $_SESSION['user_id'], $flashcardId, $status, $rating, $isCorrect, $isIncorrect, $nextDue, $ef, $intervalDays, $reps);
     $ok = $stmt->execute();
     echo json_encode(["success" => $ok, "message" => $ok ? "Đã lưu đánh giá" : "Không thể lưu" , "next_due_at" => $nextDue]);
 }
@@ -953,7 +953,11 @@ function addWordToDeck() {
         }
 
         // Check if word already exists in deck
-        $stmt = $conn->prepare("SELECT id FROM flashcards WHERE deck_id = ? AND front = ?");
+        $stmt = $conn->prepare("SELECT id FROM flashcards WHERE deck_id = ? AND word = ?");
+        if (!$stmt) {
+            echo json_encode(["success" => false, "message" => "Database error: " . $conn->error]);
+            return;
+        }
         $stmt->bind_param("is", $deckId, $word);
         $stmt->execute();
         if ($stmt->get_result()->num_rows > 0) {
@@ -962,7 +966,11 @@ function addWordToDeck() {
         }
 
         // Add word to deck
-        $stmt = $conn->prepare("INSERT INTO flashcards (deck_id, front, back, example) VALUES (?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO flashcards (deck_id, word, definition, example) VALUES (?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(["success" => false, "message" => "Database error: " . $conn->error]);
+            return;
+        }
         $stmt->bind_param("isss", $deckId, $word, $definition, $example);
 
         if ($stmt->execute()) {
